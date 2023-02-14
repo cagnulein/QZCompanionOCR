@@ -81,7 +81,7 @@ public class QZService extends Service {
     private void parse() {
         Log.d(LOG_TAG,"Parsing ");
 
-        if(!file.equals("")) {
+        {
             try {
                 socket = new DatagramSocket();
                 socket.setBroadcast(true);

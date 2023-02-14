@@ -93,43 +93,7 @@ public class UDPListenerService extends Service {
 
         writeLog(message);
         String[] amessage = message.split(";");
-        if(device == _device.s22i || device == _device.tdf10) {
-            if (amessage.length > 0) {
-                String rResistance = amessage[0];
-                double reqResistance = Double.parseDouble(rResistance);
-                reqResistance = Math.round((reqResistance) * 10) / 10.0;
-                writeLog("requestResistance: " + reqResistance + " " + lastReqResistance);
-
-                if (lastSwipeMs + 500 < Calendar.getInstance().getTimeInMillis()) {
-                    if (reqResistance != -1 && lastReqResistance != reqResistance || reqCachedResistance != -1) {
-                        if (reqCachedResistance != -1) {
-                            reqResistance = reqCachedResistance;
-                        }
-                        int x1 = 0;
-                        int y2 = 0;
-                        if (device == _device.s22i) {
-                            x1 = 75;
-                            y2 = (int) (616.18 - (17.223 * reqResistance));
-                        } else if (device == _device.tdf10) {
-							x1 = 1205;
-                            y2 = (int) (619.91 - (15.913 * reqResistance));
-						}
-
-                        String command = "input swipe " + x1 + " " + y1Resistance + " " + x1 + " " + y2 + " 200";
-                        MainActivity.sendCommand(command);
-                        writeLog(command);
-
-                        if (device == _device.s22i || device == _device.tdf10)
-                            y1Resistance = y2;  //set new vertical position of speed slider
-                        lastReqResistance = reqResistance;
-                        lastSwipeMs = Calendar.getInstance().getTimeInMillis();
-                        reqCachedResistance = -1;
-                    }
-                } else {
-                    reqCachedResistance = reqResistance;
-                }
-            }
-        } else {
+        {
             if (amessage.length > 0) {
                 String rSpeed = amessage[0];
                 double reqSpeed = Double.parseDouble(rSpeed);

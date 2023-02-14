@@ -34,6 +34,7 @@ android {
     }
 }
 dependencies {
+    compile 'com.rvalerio:fgchecker:1.1.0'
     implementation "androidx.core:core-ktx:+"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.1.0"
     implementation 'com.google.mlkit:text-recognition:16.0.0-beta6'

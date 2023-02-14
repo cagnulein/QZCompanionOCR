@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             }
         });
 
-        int device = sharedPreferences.getInt("device", R.id.other);
+        int device = sharedPreferences.getInt("device", R.id.bike);
         RadioButton radioButton;
         radioButton = findViewById(device);
         if(radioButton != null)

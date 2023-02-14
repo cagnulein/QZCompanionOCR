@@ -152,7 +152,7 @@ public class ScreenCaptureService extends Service {
 
                                           Log.v(TAG, "Image done!" + resultText);
 
-                                          String[] list = resultText.split('\n');
+                                          String[] list = resultText.split("\n");
                                           boolean waitCadence = false;
                                           boolean waitPower = false;
                                           boolean waitResistance = false;
@@ -168,16 +168,16 @@ public class ScreenCaptureService extends Service {
                                                  waitSpeed = true;
                                              } else if(waitCadence) {
                                                  waitCadence = false;
-                                                 QZService.lastCadence = Integer.parseInt(l);
+                                                 QZService.lastCadence = l;
                                              } else if(waitPower) {
                                                  waitPower = false;
-                                                 QZService.lastWattage = Integer.parseInt(l);
+                                                 QZService.lastWattage = l;
                                              } else if(waitResistance) {
                                                  waitResistance = false;
-                                                 QZService.lastResistance = Integer.parseInt(l);
+                                                 QZService.lastResistance = l;
                                              } else if(waitSpeed) {
                                                  waitSpeed = false;
-                                                 QZService.lastSpeed = Double.parseDouble(l.split(" ")[0]);
+                                                 QZService.lastSpeed = l;
                                              }
                                           }                                                                                
 

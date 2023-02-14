@@ -99,7 +99,7 @@ public class MediaProjection  {
         MediaProjectionManager mProjectionManager =
                 (MediaProjectionManager) context.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         Activity a = (Activity)_context;
-        this.startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE);
+        a.startActivityForResult(mProjectionManager.createScreenCaptureIntent(), REQUEST_CODE);
     }
 
     public void stopProjection() {
