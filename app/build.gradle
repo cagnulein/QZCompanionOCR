@@ -2,6 +2,13 @@ plugins {
     id 'com.android.application'
 }
 
+repositories {
+    google()
+    jcenter()
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://dl.bintray.com/rvalerio/maven' }
+}
+
 android {
     compileSdkVersion 33
 
@@ -9,8 +16,8 @@ android {
         applicationId "org.cagnulein.qzcompanionpeloton"
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode 65
-        versionName "3.2.18"
+        versionCode 1
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,6 +36,8 @@ android {
 dependencies {
     implementation "androidx.core:core-ktx:+"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.1.0"
+    implementation 'com.google.mlkit:text-recognition:16.0.0-beta6'
+    implementation 'com.google.android.play:core:1.8.2'
 
     implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'com.google.android.material:material:1.4.0'
