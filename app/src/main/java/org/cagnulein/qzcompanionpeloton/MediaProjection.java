@@ -18,7 +18,7 @@ import android.annotation.TargetApi;
 //import com.rvalerio.fgchecker.AppChecker;
 
 public class MediaProjection  {
-    private static final int REQUEST_CODE = 100;
+    public static final int REQUEST_CODE = 100;
     private static Context _context;
     private static String _packageName = "";
     /*private static MediaProjection m_instance;
@@ -27,15 +27,6 @@ public class MediaProjection  {
         m_instance = this;
         startProjection();
     }*/
-
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE) {
-            if (resultCode != Activity.RESULT_OK) {
-                return;
-            }
-            //startService(org.cagnulen.qdomyoszwift.ScreenCaptureService.getStartIntent(this, resultCode, data));
-        }
-    }
 
  static boolean isLandscape(){
 	  boolean landscape = false;

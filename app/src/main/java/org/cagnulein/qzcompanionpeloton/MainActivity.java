@@ -304,4 +304,15 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         }
     }
 
+    protected  void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.v(LOG_TAG, "onActivityResult " + requestCode + " " + resultCode);
+        if (requestCode == MediaProjection.REQUEST_CODE) {
+            if (resultCode != Activity.RESULT_OK) {
+                return;
+            }
+            startService(org.cagnulein.qzcompanionpeloton.ScreenCaptureService.getStartIntent(this, resultCode, data));
+        }
+    }
+
+
 }
