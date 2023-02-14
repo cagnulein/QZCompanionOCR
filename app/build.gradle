@@ -33,6 +33,9 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
+
+apply plugin: 'com.android.application'
+
 dependencies {
     compile 'com.rvalerio:fgchecker:1.1.0'
     implementation "androidx.core:core-ktx:+"
