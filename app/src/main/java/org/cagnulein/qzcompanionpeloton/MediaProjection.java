@@ -15,7 +15,7 @@ import android.app.AppOpsManager;
 import android.util.Log;
 import android.annotation.TargetApi;
 
-import com.rvalerio.fgchecker.AppChecker;
+//import com.rvalerio.fgchecker.AppChecker;
 
 public class MediaProjection  {
     private static final int REQUEST_CODE = 100;
@@ -76,22 +76,22 @@ public class MediaProjection  {
 		  _context = context;
 		  requestUsageStatsPermission();
         context.startService(org.cagnulein.qzcompanionpeloton.ScreenCaptureService.getStartIntent(context, resultCode, data));
-
+/*
 		  AppChecker appChecker = new AppChecker();
 		  appChecker
 		      .whenAny(new AppChecker.Listener() {
 					 @Override
 					 public void onForeground(String packageName) {
                                             _packageName = packageName;
-                                                  /*Log.e("MediaProjection", packageName);
+                                                  Log.e("MediaProjection", packageName);
 						  if(isLandscape())
 						     Log.e("MediaProjection", "Landscape");
 						  else
-                                                     Log.e("MediaProjection", "Portrait");*/
+                                                     Log.e("MediaProjection", "Portrait");
 						}
 				})
 				.timeout(1000)
-				.start(context);
+				.start(context);*/
     }
 
     public void startProjection(Context context) {
