@@ -14,3 +14,13 @@
 .cxx
 local.properties
 *.apk
+.idea/.name
+.idea/codeStyles/codeStyleConfig.xml
+.idea/codeStyles/Project.xml
+.idea/compiler.xml
+.idea/gradle.xml
+.idea/jarRepositories.xml
+.idea/misc.xml
+.idea/vcs.xml
+app/src/androidTest/java/org/cagnulein/qzcompanionnordictracktreadmill/ExampleInstrumentedTest.java
+app/src/test/java/org/cagnulein/qzcompanionnordictracktreadmill/ExampleUnitTest.java
