@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Locale;
 import java.util.Objects;
 
 import com.google.mlkit.vision.common.InputImage;
@@ -151,6 +152,8 @@ public class ScreenCaptureService extends Service {
                                           lastText = resultText;
 
                                           Log.v(TAG, "Image done!" + resultText);
+
+                                          resultText = resultText.toUpperCase(Locale.ROOT);
 
                                           String[] list = resultText.split("\n");
                                           boolean waitCadence = false;
