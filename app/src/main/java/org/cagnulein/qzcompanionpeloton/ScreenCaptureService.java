@@ -156,19 +156,22 @@ public class ScreenCaptureService extends Service {
                                           Log.v(TAG, "Image done!" + resultText);
 
                                           resultText = resultText.toUpperCase(Locale.ROOT);
+                                          QZService.lastFullString = resultText;
 
                                           String[] list = resultText.split("\n");
                                           boolean waitCadence = false;
                                           boolean waitPower = false;
                                           boolean waitResistance = false;
                                           boolean waitSpeed = false;
+                                          boolean timerFound = false;
                                           for(String l: list) {
 
                                               // timestamp
                                               Pattern p = Pattern.compile("\\d\\d:\\d\\d");
                                               Matcher m = p.matcher(l);
-                                              if (m.matches()) {
+                                              if (m.matches() && timerFound == false) {
                                                  QZService.lastCountdown = l;
+                                                 timerFound = true;
                                               }
                                              if(l.startsWith("CADENCE")) {
                                                  waitCadence = true;

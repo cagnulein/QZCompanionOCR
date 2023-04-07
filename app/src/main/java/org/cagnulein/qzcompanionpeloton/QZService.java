@@ -26,7 +26,7 @@ public class QZService extends Service {
     int startMode;       // indicates how to behave if the service is killed
     IBinder binder;      // interface for clients that bind
     boolean allowRebind; // indicates whether onRebind should be used    
-    int clientPort = 8002;
+    int clientPort = 8003;
     Handler handler = new Handler();
     Runnable runnable = null;
     DatagramSocket socket = null;
@@ -47,6 +47,7 @@ public class QZService extends Service {
     static String lastCadence = "";
     static String lastResistance = "";
     static String lastCountdown = "";
+    static String lastFullString = "";
 
     int counterTruncate = 0;
 
@@ -86,7 +87,7 @@ public class QZService extends Service {
                 socket = new DatagramSocket();
                 socket.setBroadcast(true);
 
-				sendBroadcast(lastCountdown + ";" + lastWattage + ";" + lastCadence + ";" + lastResistance + ";" + lastSpeed);
+				sendBroadcast(lastCountdown + ";" + lastWattage + ";" + lastCadence + ";" + lastResistance + ";" + lastSpeed + "|" + lastFullString);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 return;
