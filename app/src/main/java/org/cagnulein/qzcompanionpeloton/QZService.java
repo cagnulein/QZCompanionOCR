@@ -46,6 +46,7 @@ public class QZService extends Service {
     static String lastWattage = "";
     static String lastCadence = "";
     static String lastResistance = "";
+    static String lastCountdown = "";
 
     int counterTruncate = 0;
 
@@ -85,7 +86,7 @@ public class QZService extends Service {
                 socket = new DatagramSocket();
                 socket.setBroadcast(true);
 
-				sendBroadcast(lastWattage + ";" + lastCadence + ";" + lastResistance + ";" + lastSpeed);
+				sendBroadcast(lastCountdown + ";" + lastWattage + ";" + lastCadence + ";" + lastResistance + ";" + lastSpeed);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 return;

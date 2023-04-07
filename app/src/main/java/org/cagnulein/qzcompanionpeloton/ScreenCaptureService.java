@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
@@ -161,6 +163,13 @@ public class ScreenCaptureService extends Service {
                                           boolean waitResistance = false;
                                           boolean waitSpeed = false;
                                           for(String l: list) {
+
+                                              // timestamp
+                                              Pattern p = Pattern.compile("\\d\\d:\\d\\d");
+                                              Matcher m = p.matcher(l);
+                                              if (m.matches()) {
+                                                 QZService.lastCountdown = l;
+                                              }
                                              if(l.startsWith("CADENCE")) {
                                                  waitCadence = true;
                                              } else if(l.startsWith("RESISTANCE")) {
@@ -182,7 +191,7 @@ public class ScreenCaptureService extends Service {
                                                  waitSpeed = false;
                                                  QZService.lastSpeed = l;
                                              }
-                                          }                                                                                
+                                          }
 
                                           /*
                                           for (Text.TextBlock block : result.getTextBlocks()) {
