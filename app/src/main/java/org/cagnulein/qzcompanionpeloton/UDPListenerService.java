@@ -92,7 +92,8 @@ public class UDPListenerService extends Service {
         writeLog("Got UDP broadcast from " + senderIP + ", message: " + message);
 
         writeLog(message);
-        QZService.address = message;
+        if(message.contains("http"))
+            QZService.address = message;
 
         broadcastIntent(senderIP, message);
         //socket.close();
