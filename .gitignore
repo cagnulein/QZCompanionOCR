@@ -23,3 +23,4 @@ local.properties
 .idea/vcs.xml
 app/src/androidTest/java/org/cagnulein/qzcompanionnordictracktreadmill/ExampleInstrumentedTest.java
 app/src/test/java/org/cagnulein/qzcompanionnordictracktreadmill/ExampleUnitTest.java
+app/release/app-release.aab
