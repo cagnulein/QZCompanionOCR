@@ -41,9 +41,11 @@ public class FloatingWindowGFG extends Service {
          // Retrieve the user preference node for the package com.mycompany
          SharedPreferences sharedPreferences;
 
-         // Preference key name
-         final String PREF_NAME_X = "floatWindowLayoutUpdateParamX";
-         final String PREF_NAME_Y = "floatWindowLayoutUpdateParamY";
+     // Preference key name
+	 public static final String PREF_NAME_X = "floatWindowLayoutUpdateParamX";
+	 public static final String PREF_NAME_Y = "floatWindowLayoutUpdateParamY";
+	 public static final String PREF_NAME_WIDTH = "floatWindowLayoutUpdateParamWidth";
+	 public static final String PREF_NAME_HEIGHT = "floatWindowLayoutUpdateParamHeight";
 
 	 // As FloatingWindowGFG inherits Service class,
 	 // it actually overrides the onBind method
@@ -116,9 +118,14 @@ public class FloatingWindowGFG extends Service {
 		  // 5) Next parameter is Layout_Format. System chooses a format that supports
 		  // translucency by PixelFormat.TRANSLUCENT
 
-		  floatWindowLayoutParam = new WindowManager.LayoutParams(
-                          (int) (FloatingHandler._width ),
-                                         (int) (FloatingHandler._height ),
+		 sharedPreferences = getSharedPreferences("QZ", MODE_PRIVATE);
+
+		 int _width = sharedPreferences.getInt(PREF_NAME_WIDTH, 400);
+		 int _height = sharedPreferences.getInt(PREF_NAME_HEIGHT, 400);
+
+		 floatWindowLayoutParam = new WindowManager.LayoutParams(
+                          (int) (_width ),
+                                         (int) (_height ),
 					 LAYOUT_TYPE,
 					 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
 					 PixelFormat.TRANSLUCENT
@@ -132,7 +139,6 @@ public class FloatingWindowGFG extends Service {
 		  floatWindowLayoutParam.x = 0;
 		  floatWindowLayoutParam.y = 0;
 
-                  sharedPreferences = getSharedPreferences("FloatingWindowGFG",MODE_PRIVATE);
                   floatWindowLayoutParam.x = sharedPreferences.getInt(PREF_NAME_X, floatWindowLayoutParam.x);
                   floatWindowLayoutParam.y = sharedPreferences.getInt(PREF_NAME_Y, floatWindowLayoutParam.y);
 

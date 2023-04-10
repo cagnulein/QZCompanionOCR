@@ -17,10 +17,13 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -55,12 +58,15 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
     private static String lastCommand = "";
     private static boolean ADBConnected = false;
     private static String appLogs = "";
+    private boolean floating_open = false;
 
 	private final ShellRuntime shellRuntime = new ShellRuntime();
 
     // on below line we are creating variables.
     RadioGroup radioGroup;
     SharedPreferences sharedPreferences;
+    EditText width;
+    EditText height;
 
     private boolean checkPermissions(){
         if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
@@ -178,6 +184,8 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
 
         sharedPreferences = getSharedPreferences("QZ",MODE_PRIVATE);
         radioGroup = findViewById(R.id.radiogroupDevice);
+        width = findViewById(R.id.width);
+        height = findViewById(R.id.height);
 
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -192,6 +200,56 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             }
         });
 
+        width.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                try{
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                    myEdit.putInt(FloatingWindowGFG.PREF_NAME_WIDTH, Integer.parseInt(String.valueOf(width.getText())));
+                    myEdit.commit();
+                } catch (NumberFormatException ex) {
+
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+        height.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                try {
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                    myEdit.putInt(FloatingWindowGFG.PREF_NAME_HEIGHT, Integer.parseInt(String.valueOf(height.getText())));
+                    myEdit.commit();
+                } catch (NumberFormatException ex) {
+
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+        int w = sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_WIDTH, 400);
+        width.setText(Integer.toString(w));
+        height.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_HEIGHT, 400)));
+
         int device = sharedPreferences.getInt("device", R.id.bike);
         RadioButton radioButton;
         radioButton = findViewById(device);
@@ -203,7 +261,12 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         dumplog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                FloatingHandler.show(me, QZService.address, 400, 400, 60);
+                if(!floating_open)
+                    FloatingHandler.show(me, QZService.address,  60);
+                else
+                    FloatingHandler.hide();
+
+                floating_open = !floating_open;
             }
         });
 

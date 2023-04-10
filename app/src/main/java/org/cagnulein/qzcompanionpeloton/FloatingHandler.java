@@ -26,15 +26,11 @@ public class FloatingHandler {
     static Context _context;
     static public String _address;
     static Intent _intent = null;
-    static public int _width;
-    static public int _height;
     static public int _alpha;
 
-        public static void show(Context context, String address, int width, int height, int transparency) {
+        public static void show(Context context, String address, int transparency) {
             _context = context;
             _address = address;
-            _width = width;
-            _height = height;
             _alpha = transparency;
 
 		// First it confirms whether the

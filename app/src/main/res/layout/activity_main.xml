@@ -22,16 +22,48 @@
                 android:layout_height="wrap_content"
                 android:text="Floating Window" />
 
-            <TextView
-                android:id="@+id/dumplog_tv"
-                android:layout_width="fill_parent"
-                android:layout_height="300px"
-                android:scrollbars="vertical"
-                android:textSize="14px"
-                android:textIsSelectable="true"
-                android:focusable="true"
-                android:longClickable="true"
-                android:typeface="serif" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/lblwidth"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Width:" />
+
+                <EditText
+                    android:id="@+id/width"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ems="10"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/lblheight"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Height:" />
+
+                <EditText
+                    android:id="@+id/height"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ems="10"
+                    android:inputType="number" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <ScrollView
