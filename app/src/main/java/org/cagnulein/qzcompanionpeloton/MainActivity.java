@@ -198,11 +198,12 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         if(radioButton != null)
             radioButton.setChecked(true);
 
+        final Context me = this;
         Button dumplog = findViewById(R.id.dumplog);
         dumplog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                FloatingHandler.show(getApplicationContext(), QZService.address, 400, 400, 60);
+                FloatingHandler.show(me, QZService.address, 400, 400, 60);
             }
         });
 
