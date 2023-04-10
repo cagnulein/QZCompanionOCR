@@ -202,36 +202,7 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         dumplog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-            TextView tv = (TextView)findViewById(R.id.dumplog_tv);
-            tv.setText(tv.getText() + "\n" + appLogs);
-
-                String command = "logcat -b all -d > /sdcard/logcat.log";
-                MainActivity.sendCommand(command);
-                Log.i(LOG_TAG, command);
-				/*
-				String file = QZService.pickLatestFileFromDownloads();
-				if(!file.equals("")) {
-					TextView tv = (TextView)findViewById(R.id.dumplog_tv);
-					tv.setText("FILE " + file);
-					try {
-						InputStream speed2InputStream = shellRuntime.execAndGetOutput("cat " + file);
-						BufferedReader is = new BufferedReader(new InputStreamReader(speed2InputStream));
-						String line;
-						while ((line = is.readLine()) != null) {
-							tv.setText(tv.getText().toString() + "\r\n" + line);
-							tv.setMovementMethod(new ScrollingMovementMethod());
-						}					  					  
-					} catch (IOException e) {
-						  // Handle Exception
-						tv.setText(e.getMessage());
-						tv.setMovementMethod(new ScrollingMovementMethod());
-						Log.e(LOG_TAG, e.getMessage());
-					}
-				} else {
-					TextView tv = (TextView)findViewById(R.id.dumplog_tv);
-					tv.setText("file not found");
-					tv.setMovementMethod(new ScrollingMovementMethod());
-				}*/
+                FloatingHandler.show(getApplicationContext(), QZService.address, 400, 400, 60);
             }
         });
 

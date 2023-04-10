@@ -92,78 +92,7 @@ public class UDPListenerService extends Service {
         writeLog("Got UDP broadcast from " + senderIP + ", message: " + message);
 
         writeLog(message);
-        String[] amessage = message.split(";");
-        {
-            if (amessage.length > 0) {
-                String rSpeed = amessage[0];
-                double reqSpeed = Double.parseDouble(rSpeed);
-                reqSpeed = Math.round((reqSpeed) * 10) / 10.0;
-                writeLog("requestSpeed: " + reqSpeed + " " + lastReqSpeed);
-
-                if (lastSwipeMs + 500 < Calendar.getInstance().getTimeInMillis()) {
-                    if (reqSpeed != -1 && lastReqSpeed != reqSpeed || reqCachedSpeed != -1) {
-                        if (reqCachedSpeed != -1) {
-                            reqSpeed = reqCachedSpeed;
-                        }
-                        int x1 = 0;
-                        int y2 = 0;
-                        /*
-                        if (device == _device.x11i) {
-                            x1 = 1207;
-                            y2 = (int) (621.997 - (21.785 * reqSpeed));
-                        }*/
-
-                        String command = "input swipe " + x1 + " " + y1Speed + " " + x1 + " " + y2 + " 200";
-                        MainActivity.sendCommand(command);
-                        writeLog(command);
-
-                        /*if (device == _device.x11i || device == _device.proform_2000 || device == _device.t85s || device == _device.s40 || device == _device.exp7i || device == _device.x32i)
-                            y1Speed = y2;  //set new vertical position of speed slider
-                            */
-                        lastReqSpeed = reqSpeed;
-                        lastSwipeMs = Calendar.getInstance().getTimeInMillis();
-                        reqCachedSpeed = -1;
-                    }
-                } else {
-                    reqCachedSpeed = reqSpeed;
-                }
-            }
-
-            if (amessage.length > 1 && lastSwipeMs + 500 < Calendar.getInstance().getTimeInMillis()) {
-                String rInclination = amessage[1];
-                double reqInclination = roundToHalf(Double.parseDouble(rInclination));
-                writeLog("requestInclination: " + reqInclination + " " + lastReqInclination + " " + reqCachedInclination);				
-				Boolean need = reqInclination != -100 && lastReqInclination != reqInclination;
-				if (!need && reqCachedInclination != -100) {
-					reqInclination = reqCachedInclination;
-					reqCachedInclination = -100;
-				}					
-                if (reqInclination != -100 && lastReqInclination != reqInclination) {
-                    int x1 = 0;
-                    int y2 = 0;/*
-                    if (device == _device.x11i) {
-                        x1 = 75;
-                        y2 = (int) (565.491 - (8.44 * reqInclination));
-                    }*/
-
-                    String command = " input swipe " + x1 + " " + y1Inclination + " " + x1 + " " + y2 + " 200";
-                    MainActivity.sendCommand(command);
-                    writeLog(command);
-
-                    /*if (device == _device.x11i || device == device.proform_2000 || device == device.t85s || device == device.s40 || device == device.exp7i || device == _device.x32i)
-                        y1Inclination = y2;  //set new vertical position of inclination slider
-                        */
-                    lastReqInclination = reqInclination;
-                    lastSwipeMs = Calendar.getInstance().getTimeInMillis();
-					reqCachedInclination = -100;
-                }
-            } else if(amessage.length > 1) {
-                String rInclination = amessage[1];
-                double reqInclination = roundToHalf(Double.parseDouble(rInclination));
-                writeLog("requestInclination not handled due to lastSwipeMs: " + reqInclination);
-				reqCachedInclination = reqInclination;
-			}
-        }
+        QZService.address = message;
 
         broadcastIntent(senderIP, message);
         //socket.close();

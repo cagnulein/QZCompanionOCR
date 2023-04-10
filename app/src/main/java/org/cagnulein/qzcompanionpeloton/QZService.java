@@ -48,6 +48,7 @@ public class QZService extends Service {
     static String lastResistance = "";
     static String lastCountdown = "";
     static String lastFullString = "";
+    static String address = "";
 
     int counterTruncate = 0;
 
