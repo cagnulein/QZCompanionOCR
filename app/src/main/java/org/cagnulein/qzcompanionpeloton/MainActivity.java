@@ -68,6 +68,13 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
     EditText width;
     EditText height;
 
+
+    public void onDestroy() {
+        if(floating_open)
+            FloatingHandler.hide();
+        super.onDestroy();
+    }
+
     private boolean checkPermissions(){
         if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             return true;
