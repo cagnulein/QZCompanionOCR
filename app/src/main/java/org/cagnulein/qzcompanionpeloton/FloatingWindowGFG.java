@@ -75,6 +75,10 @@ public class FloatingWindowGFG extends Service {
 		  // inflate a new view hierarchy from the floating_layout xml
 		  floatView = (ViewGroup) inflater.inflate(R.layout.floating_layout, null);
 
+		 sharedPreferences = getSharedPreferences("QZ", MODE_PRIVATE);
+
+		 int zoom = sharedPreferences.getInt("zoom", 100);
+
                   WebView wv = (WebView)floatView.findViewById(R.id.webview);
 		  wv.setWebViewClient(new WebViewClient(){
 			   public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -84,12 +88,13 @@ public class FloatingWindowGFG extends Service {
 		  });
                   WebSettings settings = wv.getSettings();
                   settings.setJavaScriptEnabled(true);
+				  wv.setInitialScale(zoom);
                   wv.loadUrl(FloatingHandler._address);
                   wv.clearView();
                   wv.measure(100, 100);
                   wv.setAlpha(Float.valueOf(FloatingHandler._alpha) / 100.0f);
                   settings.setBuiltInZoomControls(true);
-                  settings.setUseWideViewPort(true);
+                  settings.setUseWideViewPort(false);
                   settings.setDomStorageEnabled(true);
                   Log.d("QZ","loadurl");
 
@@ -117,8 +122,6 @@ public class FloatingWindowGFG extends Service {
 		  // This problem is solved later.
 		  // 5) Next parameter is Layout_Format. System chooses a format that supports
 		  // translucency by PixelFormat.TRANSLUCENT
-
-		 sharedPreferences = getSharedPreferences("QZ", MODE_PRIVATE);
 
 		 int _width = sharedPreferences.getInt(PREF_NAME_WIDTH, 800);
 		 int _height = sharedPreferences.getInt(PREF_NAME_HEIGHT, 400);

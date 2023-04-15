@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
     EditText height;
     EditText top;
     EditText left;
+    EditText zoom;
 
     public void onDestroy() {
         if(floating_open)
@@ -203,6 +204,7 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         height = findViewById(R.id.height);
         top = findViewById(R.id.top);
         left = findViewById(R.id.left);
+        zoom = findViewById(R.id.zoom);
 
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -309,10 +311,34 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             }
         });
 
+        zoom.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                try {
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                    myEdit.putInt("zoom", Integer.parseInt(String.valueOf(zoom.getText())));
+                    myEdit.commit();
+                } catch (NumberFormatException ex) {
+
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
         int w = sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_WIDTH, 800);
         width.setText(Integer.toString(w));
         height.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_HEIGHT, 400)));
         top.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_Y, 400)));
+        zoom.setText(Integer.toString(sharedPreferences.getInt("zoom", 100)));
         left.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_X, 400)));
 
         int device = sharedPreferences.getInt("device", R.id.bike);
@@ -357,6 +383,36 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
                     FloatingHandler.hide();
 
                 floating_open = !floating_open;
+            }
+        });
+
+        Button btnminuszoom = findViewById(R.id.btnminuszoom);
+        btnminuszoom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(Integer.parseInt(String.valueOf(zoom.getText())) > 10) {
+                    zoom.setText(String.valueOf(Integer.parseInt(String.valueOf(zoom.getText()) )- 10));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
+            }
+        });
+
+        Button btnpluszoom = findViewById(R.id.btnpluszoom);
+        btnpluszoom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                {
+                    zoom.setText(String.valueOf(Integer.parseInt(String.valueOf(zoom.getText()) ) + 10));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
             }
         });
 
