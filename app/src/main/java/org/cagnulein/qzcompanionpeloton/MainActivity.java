@@ -23,12 +23,15 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.app.Activity;
 
+import java.lang.ref.WeakReference;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Timer;
@@ -58,16 +61,20 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
     private static String lastCommand = "";
     private static boolean ADBConnected = false;
     private static String appLogs = "";
-    private boolean floating_open = false;
+    public static boolean floating_open = false;
+    public static boolean b_autofloating;
 
 	private final ShellRuntime shellRuntime = new ShellRuntime();
+
+    private static WeakReference<Context> sContextReference;
 
     // on below line we are creating variables.
     RadioGroup radioGroup;
     SharedPreferences sharedPreferences;
     EditText width;
     EditText height;
-
+    EditText top;
+    EditText left;
 
     public void onDestroy() {
         if(floating_open)
@@ -186,6 +193,7 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sContextReference = new WeakReference<>(this);
         setContentView(R.layout.activity_main);
         checkPermissions();
 
@@ -193,6 +201,8 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         radioGroup = findViewById(R.id.radiogroupDevice);
         width = findViewById(R.id.width);
         height = findViewById(R.id.height);
+        top = findViewById(R.id.top);
+        left = findViewById(R.id.left);
 
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -253,15 +263,88 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             }
         });
 
-        int w = sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_WIDTH, 400);
+        top.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                try {
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                    myEdit.putInt(FloatingWindowGFG.PREF_NAME_Y, Integer.parseInt(String.valueOf(top.getText())));
+                    myEdit.commit();
+                } catch (NumberFormatException ex) {
+
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+        left.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                try {
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                    myEdit.putInt(FloatingWindowGFG.PREF_NAME_X, Integer.parseInt(String.valueOf(left.getText())));
+                    myEdit.commit();
+                } catch (NumberFormatException ex) {
+
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+        int w = sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_WIDTH, 800);
         width.setText(Integer.toString(w));
         height.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_HEIGHT, 400)));
+        top.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_Y, 400)));
+        left.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_X, 400)));
 
         int device = sharedPreferences.getInt("device", R.id.bike);
         RadioButton radioButton;
         radioButton = findViewById(device);
         if(radioButton != null)
             radioButton.setChecked(true);
+
+        boolean b_autosync = sharedPreferences.getBoolean("autosync", false);
+        Switch autosync = findViewById(R.id.autosync);
+        autosync.setChecked(b_autosync);
+        autosync.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                myEdit.putBoolean("autosync", autosync.isChecked());
+                myEdit.commit();
+            }
+        });
+
+        b_autofloating = sharedPreferences.getBoolean("autofloating", true);
+        Switch autofloating = findViewById(R.id.autofloating);
+        autofloating.setChecked(b_autofloating);
+        autofloating.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                myEdit.putBoolean("autofloating", autofloating.isChecked());
+                myEdit.commit();
+                b_autofloating = autofloating.isChecked();
+            }
+        });
 
         final Context me = this;
         Button dumplog = findViewById(R.id.dumplog);
@@ -274,6 +357,126 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
                     FloatingHandler.hide();
 
                 floating_open = !floating_open;
+            }
+        });
+
+        Button btnminustop = findViewById(R.id.btnminustop);
+        btnminustop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(Integer.parseInt(String.valueOf(top.getText())) > 50) {
+                    top.setText(String.valueOf(Integer.parseInt(String.valueOf(top.getText()) )- 50));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
+            }
+        });
+
+        Button btnplustop = findViewById(R.id.btnplustop);
+        btnplustop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                {
+                    top.setText(String.valueOf(Integer.parseInt(String.valueOf(top.getText()) ) + 50));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
+            }
+        });
+
+        Button btnminusleft = findViewById(R.id.btnminusleft);
+        btnminusleft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(Integer.parseInt(String.valueOf(left.getText())) > 50) {
+                    left.setText(String.valueOf(Integer.parseInt(String.valueOf(left.getText()) )- 50));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
+            }
+        });
+
+        Button btnplusleft = findViewById(R.id.btnplusleft);
+        btnplusleft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                {
+                    left.setText(String.valueOf(Integer.parseInt(String.valueOf(left.getText()) ) + 50));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
+            }
+        });
+
+        Button btnminuswidth = findViewById(R.id.btnminuswidth);
+        btnminuswidth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(Integer.parseInt(String.valueOf(width.getText())) > 50) {
+                    width.setText(String.valueOf(Integer.parseInt(String.valueOf(width.getText()) )- 50));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
+            }
+        });
+
+        Button btnpluswidth = findViewById(R.id.btnpluswidth);
+        btnpluswidth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                {
+                    width.setText(String.valueOf(Integer.parseInt(String.valueOf(width.getText()) ) + 50));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
+            }
+        });
+
+        Button btnminusheight = findViewById(R.id.btnminusheight);
+        btnminusheight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(Integer.parseInt(String.valueOf(height.getText())) > 50) {
+                    height.setText(String.valueOf(Integer.parseInt(String.valueOf(height.getText()) )- 50));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
+            }
+        });
+
+        Button btnplusheight = findViewById(R.id.btnpluheight);
+        btnplusheight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                {
+                    height.setText(String.valueOf(Integer.parseInt(String.valueOf(height.getText()) ) + 50));
+                    if(floating_open) {
+                        FloatingHandler.hide();
+                        FloatingHandler.show(me, QZService.address, 60);
+                    }
+
+                }
             }
         });
 
@@ -327,8 +530,17 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             }
         }
 
-        MediaProjection media = new MediaProjection();
-        media.startProjection(this);
+        if(b_autosync) {
+            MediaProjection media = new MediaProjection();
+            media.startProjection(this);
+        }
+
+    }
+
+    public static void showFloating() {
+        Context me = sContextReference.get();
+        floating_open = true;
+        FloatingHandler.show(me, QZService.address, 60);
     }
 
     static public void sendCommand(String command) {
@@ -356,6 +568,4 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             startService(org.cagnulein.qzcompanionpeloton.ScreenCaptureService.getStartIntent(this, resultCode, data));
         }
     }
-
-
 }

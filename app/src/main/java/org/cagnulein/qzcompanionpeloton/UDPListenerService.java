@@ -9,6 +9,7 @@ import java.util.Calendar;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
 import android.os.IBinder;
@@ -92,8 +93,16 @@ public class UDPListenerService extends Service {
         writeLog("Got UDP broadcast from " + senderIP + ", message: " + message);
 
         writeLog(message);
-        if(message.contains("http"))
+        if(message.contains("http")) {
             QZService.address = message;
+            if(!MainActivity.floating_open) {
+                SharedPreferences sharedPreferences = getSharedPreferences("QZ",MODE_PRIVATE);
+                boolean b_autofloating = sharedPreferences.getBoolean("autofloating", true);
+                if(b_autofloating) {
+                    MainActivity.showFloating();
+                }
+            }
+        }
 
         broadcastIntent(senderIP, message);
         //socket.close();

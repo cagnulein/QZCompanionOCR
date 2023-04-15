@@ -120,7 +120,7 @@ public class FloatingWindowGFG extends Service {
 
 		 sharedPreferences = getSharedPreferences("QZ", MODE_PRIVATE);
 
-		 int _width = sharedPreferences.getInt(PREF_NAME_WIDTH, 400);
+		 int _width = sharedPreferences.getInt(PREF_NAME_WIDTH, 800);
 		 int _height = sharedPreferences.getInt(PREF_NAME_HEIGHT, 400);
 
 		 floatWindowLayoutParam = new WindowManager.LayoutParams(
@@ -133,7 +133,7 @@ public class FloatingWindowGFG extends Service {
 
 		  // The Gravity of the Floating Window is set.
 		  // The Window will appear in the center of the screen
-		  floatWindowLayoutParam.gravity = Gravity.CENTER;
+		  floatWindowLayoutParam.gravity = Gravity.TOP | Gravity.LEFT;
 
 		  // X and Y value of the window is set
 		  floatWindowLayoutParam.x = 0;
