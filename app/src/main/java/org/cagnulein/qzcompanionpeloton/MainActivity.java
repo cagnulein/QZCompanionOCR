@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
     EditText top;
     EditText left;
     EditText zoom;
+    static Button dumplog;
 
     public void onDestroy() {
         if(floating_open)
@@ -373,7 +374,7 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         });
 
         final Context me = this;
-        Button dumplog = findViewById(R.id.dumplog);
+        dumplog = findViewById(R.id.dumplog);
         dumplog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -595,6 +596,17 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
 
     public static void showFloating() {
         Context me = sContextReference.get();
+        Activity a = (Activity)me;
+        a.runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                // Stuff that updates the UI
+                dumplog.setVisibility(View.VISIBLE);
+            }
+        });
+
         floating_open = true;
         FloatingHandler.show(me, QZService.address, 60);
     }
