@@ -89,6 +89,12 @@ public class QZService extends Service {
                 socket.setBroadcast(true);
 
 				sendBroadcast(lastCountdown + ";" + lastWattage + ";" + lastCadence + ";" + lastResistance + ";" + lastSpeed + "|" + lastFullString);
+                lastCountdown = "";
+                lastWattage = "";
+                lastCadence = "";
+                lastResistance = "";
+                lastSpeed = "";
+                lastFullString = "";
             } catch (Exception ex) {
                 ex.printStackTrace();
                 return;
