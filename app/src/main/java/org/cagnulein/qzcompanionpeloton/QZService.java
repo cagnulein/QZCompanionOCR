@@ -49,6 +49,9 @@ public class QZService extends Service {
     static String lastCountdown = "";
     static String lastFullString = "";
     static String address = "";
+    static String lastScreenShotTimeStamp = "";
+    static String lastOCRTimeStamp = "";
+    static String lastDeltaTimeStamp = "";
 
     int counterTruncate = 0;
 
@@ -88,13 +91,17 @@ public class QZService extends Service {
                 socket = new DatagramSocket();
                 socket.setBroadcast(true);
 
-				sendBroadcast(lastCountdown + ";" + lastWattage + ";" + lastCadence + ";" + lastResistance + ";" + lastSpeed + "|" + lastFullString);
+                sendBroadcast(lastCountdown + ";" + lastWattage + ";" + lastCadence + ";" + lastResistance + ";" + lastSpeed + "|" + lastFullString + "|" + 
+                              lastScreenShotTimeStamp + "|" + lastOCRTimeStamp + "|" + lastDeltaTimeStamp) ;
                 lastCountdown = "";
                 lastWattage = "";
                 lastCadence = "";
                 lastResistance = "";
                 lastSpeed = "";
                 lastFullString = "";
+                lastScreenShotTimeStamp = "";
+                lastOCRTimeStamp = "";
+                lastDeltaTimeStamp = "";
             } catch (Exception ex) {
                 ex.printStackTrace();
                 return;

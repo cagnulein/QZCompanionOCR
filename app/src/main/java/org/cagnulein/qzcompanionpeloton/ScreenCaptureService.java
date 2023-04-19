@@ -31,6 +31,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.time.Instant;
+import java.time.Duration;
 
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
@@ -115,6 +117,7 @@ public class ScreenCaptureService extends Service {
             try (Image image = mImageReader.acquireLatestImage()) {
                 if (image != null) {
                     if(!isRunning) {
+                        Instant  start = Instant.now();
                         Image.Plane[] planes = image.getPlanes();
                         ByteBuffer buffer = planes[0].getBuffer();
                         int pixelStride = planes[0].getPixelStride();
@@ -150,6 +153,8 @@ public class ScreenCaptureService extends Service {
                                   public void onSuccess(Text result) {
                                           // Task completed successfully                                          
 
+                                          Instant  end = Instant.now();
+                                          Duration delta = Duration.between(start, end);
                                           String resultText = result.getText();
                                           lastText = resultText;
 
@@ -157,6 +162,9 @@ public class ScreenCaptureService extends Service {
 
                                           resultText = resultText.toUpperCase(Locale.ROOT);
                                           QZService.lastFullString = resultText;
+                                          QZService.lastScreenShotTimeStamp = start.toString();
+                                          QZService.lastOCRTimeStamp = end.toString();
+                                          QZService.lastDeltaTimeStamp = delta.toString();
 
                                           String[] list = resultText.split("\n");
                                           boolean waitCadence = false;
@@ -170,8 +178,15 @@ public class ScreenCaptureService extends Service {
                                               Pattern p = Pattern.compile("\\d\\d:\\d\\d");
                                               Matcher m = p.matcher(l);
                                               if (m.matches() && timerFound == false) {
-                                                 QZService.lastCountdown = l;
-                                                 timerFound = true;
+                                                try {
+                                                    Duration dtime = parseDuration(l);
+                                                    Duration newtime = dtime.minus(delta);
+                                                    String snewtime = String.format("%02d:%02d", (newtime.getSeconds() % 3600) / 60, (newtime.getSeconds() % 60));                                                  
+                                                    QZService.lastCountdown = snewtime;
+                                                } catch (Exception ex) {
+                                                    QZService.lastCountdown = l;
+                                                }
+                                                timerFound = true;
                                               }
                                              if(l.startsWith("CADENCE")) {
                                                  waitCadence = true;
