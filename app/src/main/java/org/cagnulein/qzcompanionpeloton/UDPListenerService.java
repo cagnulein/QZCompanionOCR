@@ -94,6 +94,9 @@ public class UDPListenerService extends Service {
 
         writeLog(message);
         if(message.contains("http")) {
+            Boolean refreshURL = false;
+            if(!QZService.address.isEmpty() && !QZService.address.equals(message))
+                refreshURL = true;
             QZService.address = message;
             if(!MainActivity.floating_open) {
                 SharedPreferences sharedPreferences = getSharedPreferences("QZ",MODE_PRIVATE);
@@ -101,6 +104,9 @@ public class UDPListenerService extends Service {
                 if(b_autofloating) {
                     MainActivity.showFloating();
                 }
+            } else if(refreshURL) {
+                FloatingHandler.hide();
+                FloatingHandler.show(QZService.address);
             }
         }
 
