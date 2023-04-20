@@ -6,12 +6,19 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.util.Log;
 
 public class AlarmReceiver extends BroadcastReceiver
 {
     @Override
     public void onReceive(Context context, Intent intent)
     {
+        Log.d("AlarmReceiver", "onReceive!");
+        if(MainActivity.floating_open) {
+            Log.d("AlarmReceiver", "openingFloatingWindow!");
+            Intent inMain = new Intent(context, FloatingWindowGFG.class);
+            context.startService(inMain);
+        }
         Intent inServer = new Intent(context, UDPListenerService.class);
         context.startService(inServer);
         Intent in = new Intent(context, QZService.class);
