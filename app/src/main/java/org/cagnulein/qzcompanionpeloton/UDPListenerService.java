@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Calendar;
 
 import android.app.Service;
@@ -52,6 +54,8 @@ public class UDPListenerService extends Service {
 
     private final ShellRuntime shellRuntime = new ShellRuntime();
 
+    private static Instant lastURLReceivedTS;
+
     public static void setDevice(_device dev) {
         switch(dev) {
             /*case x11i:
@@ -94,6 +98,7 @@ public class UDPListenerService extends Service {
 
         writeLog(message);
         if(message.contains("http")) {
+            lastURLReceivedTS = Instant.now();
             Boolean refreshURL = false;
             if(!QZService.address.isEmpty() && !QZService.address.equals(message))
                 refreshURL = true;
@@ -108,6 +113,12 @@ public class UDPListenerService extends Service {
                 FloatingHandler.hide();
                 FloatingHandler.show(QZService.address);
             }
+        }
+
+        if(!QZService.address.isEmpty() && Duration.between(lastURLReceivedTS, Instant.now()).abs().getSeconds() > 5) {
+            QZService.address = "";
+            MainActivity.floating_open = false;
+            FloatingHandler.hide();
         }
 
         broadcastIntent(senderIP, message);
