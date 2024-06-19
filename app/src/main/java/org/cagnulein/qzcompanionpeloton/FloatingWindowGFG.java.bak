@@ -94,7 +94,7 @@ public class FloatingWindowGFG extends Service {
                   wv.measure(100, 100);
                   wv.setAlpha(Float.valueOf(FloatingHandler._alpha) / 100.0f);
                   settings.setBuiltInZoomControls(true);
-                  settings.setUseWideViewPort(true);
+                  settings.setUseWideViewPort(false);
                   settings.setDomStorageEnabled(true);
                   Log.d("QZ","loadurl");
 
@@ -136,7 +136,7 @@ public class FloatingWindowGFG extends Service {
 
 		  // The Gravity of the Floating Window is set.
 		  // The Window will appear in the center of the screen
-		  floatWindowLayoutParam.gravity = Gravity.CENTER;
+		  floatWindowLayoutParam.gravity = Gravity.TOP | Gravity.LEFT;
 
 		  // X and Y value of the window is set
 		  floatWindowLayoutParam.x = 0;
