@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="org.cagnulein.qzcompanionpeloton"  android:versionName="1.4.2" android:versionCode="17" >
+    package="org.cagnulein.qzcompanionpeloton"  android:versionName="1.5.0" android:versionCode="18" >
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -17,6 +17,10 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission
         android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
     <uses-feature android:name="android.hardware.touchscreen"
         android:required="false"/>
@@ -50,8 +54,10 @@
 
         <service android:name="com.cgutman.androidremotedebugger.service.ShellService"
             android:enabled="true"
-            android:exported="false" >
+            android:exported="false"
+            android:foregroundServiceType="dataSync">
         </service>
+
         <service android:name=".FloatingWindowGFG" android:enabled="true" android:exported="true"/>
 
         <service
