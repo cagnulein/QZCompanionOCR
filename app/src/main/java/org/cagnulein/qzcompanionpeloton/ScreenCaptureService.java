@@ -75,14 +75,16 @@ public class ScreenCaptureService extends Service {
 
     private TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
-	 private static String lastText = "";
-	 private static boolean isRunning = false;
+    private static String lastText = "";
+    private static boolean isRunning = false;
 
-	 public static String getLastText() {
-		 return lastText;
-	 }
+    public static String getLastText() {
+        Log.d(TAG, "Getting last text: " + lastText);
+        return lastText;
+    }
 
     public static Intent getStartIntent(Context context, int resultCode, Intent data) {
+        Log.d(TAG, "Creating start intent for screen capture");
         Intent intent = new Intent(context, ScreenCaptureService.class);
         intent.putExtra(ACTION, START);
         intent.putExtra(RESULT_CODE, resultCode);
@@ -91,18 +93,23 @@ public class ScreenCaptureService extends Service {
     }
 
     public static Intent getStopIntent(Context context) {
+        Log.d(TAG, "Creating stop intent for screen capture");
         Intent intent = new Intent(context, ScreenCaptureService.class);
         intent.putExtra(ACTION, STOP);
         return intent;
     }
 
     private static boolean isStartCommand(Intent intent) {
-        return intent.hasExtra(RESULT_CODE) && intent.hasExtra(DATA)
+        boolean isStart = intent.hasExtra(RESULT_CODE) && intent.hasExtra(DATA)
                 && intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), START);
+        Log.d(TAG, "Checking if start command: " + isStart);
+        return isStart;
     }
 
     private static boolean isStopCommand(Intent intent) {
-        return intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), STOP);
+        boolean isStop = intent.hasExtra(ACTION) && Objects.equals(intent.getStringExtra(ACTION), STOP);
+        Log.d(TAG, "Checking if stop command: " + isStop);
+        return isStop;
     }
 
     private static int getVirtualDisplayFlags() {
@@ -110,151 +117,133 @@ public class ScreenCaptureService extends Service {
     }
 
     public static Duration parseDuration(String durStr) {
+        Log.d(TAG, "Parsing duration string: " + durStr);
         String isoString = durStr.replaceFirst("^(\\d{1,2}):(\\d{2})$", "PT$1M$2S");
-        return Duration.parse(isoString);
+        Duration duration = Duration.parse(isoString);
+        Log.d(TAG, "Parsed duration: " + duration);
+        return duration;
     }
 
     private class ImageAvailableListener implements ImageReader.OnImageAvailableListener {
         @Override
         public void onImageAvailable(ImageReader reader) {
-
-            FileOutputStream fos = null;            
+            Log.d(TAG, "New image available for processing");
+            FileOutputStream fos = null;
             try (Image image = mImageReader.acquireLatestImage()) {
                 if (image != null) {
                     if(!isRunning) {
-                        Instant  start = Instant.now();
+                        Log.d(TAG, "Starting image processing");
+                        Instant start = Instant.now();
                         Image.Plane[] planes = image.getPlanes();
                         ByteBuffer buffer = planes[0].getBuffer();
                         int pixelStride = planes[0].getPixelStride();
                         int rowStride = planes[0].getRowStride();
                         int rowPadding = rowStride - pixelStride * mWidth;
-                        //Log.e(TAG, "Image reviewing");
 
-                          isRunning = true;
+                        isRunning = true;
 
-                          // create bitmap
-                          final Bitmap bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
-                          bitmap.copyPixelsFromBuffer(buffer);
-/*
-                          // write bitmap to a file
-                          fos = new FileOutputStream(mStoreDir + "/myscreen.png");
-                          bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                        final Bitmap bitmap = Bitmap.createBitmap(mWidth + rowPadding / pixelStride, mHeight, Bitmap.Config.ARGB_8888);
+                        bitmap.copyPixelsFromBuffer(buffer);
 
-                          IMAGES_PRODUCED++;
-                          Log.e(TAG, "captured image: " + IMAGES_PRODUCED);
-*/
+                        Log.d(TAG, "Created bitmap with dimensions: " + bitmap.getWidth() + "x" + bitmap.getHeight());
 
-                          InputImage inputImage = InputImage.fromBitmap(bitmap, 0);
-                          /*InputImage inputImage = InputImage.fromByteBuffer(buffer,
-                                  mWidth + rowPadding / pixelStride, mHeight,
-                                  0,
-                                  InputImage.IMAGE_FORMAT_NV21 // or IMAGE_FORMAT_YV12
-                          );*/
+                        InputImage inputImage = InputImage.fromBitmap(bitmap, 0);
 
-                          Task<Text> result =
-                          recognizer.process(inputImage)
-                          .addOnSuccessListener(new OnSuccessListener<Text>() {
-                                  @Override
-                                  public void onSuccess(Text result) {
-                                          // Task completed successfully                                          
+                        Task<Text> result = recognizer.process(inputImage)
+                                .addOnSuccessListener(new OnSuccessListener<Text>() {
+                                    @Override
+                                    public void onSuccess(Text result) {
+                                        Instant end = Instant.now();
+                                        Duration delta = Duration.between(start, end);
+                                        String resultText = result.getText();
+                                        lastText = resultText;
 
-                                          Instant  end = Instant.now();
-                                          Duration delta = Duration.between(start, end);
-                                          String resultText = result.getText();
-                                          lastText = resultText;
+                                        Log.d(TAG, "OCR processing completed in " + delta.toMillis() + "ms");
+                                        Log.v(TAG, "OCR result: " + resultText);
 
-                                          Log.v(TAG, "Image done!" + resultText);
+                                        resultText = resultText.toUpperCase(Locale.ROOT);
+                                        QZService.lastFullString = resultText;
+                                        QZService.lastScreenShotTimeStamp = start.toString();
+                                        QZService.lastOCRTimeStamp = end.toString();
+                                        QZService.lastDeltaTimeStamp = delta.toString();
 
-                                          resultText = resultText.toUpperCase(Locale.ROOT);
-                                          QZService.lastFullString = resultText;
-                                          QZService.lastScreenShotTimeStamp = start.toString();
-                                          QZService.lastOCRTimeStamp = end.toString();
-                                          QZService.lastDeltaTimeStamp = delta.toString();
+                                        String[] list = resultText.split("\n");
+                                        boolean waitCadence = false;
+                                        boolean waitPower = false;
+                                        boolean waitResistance = false;
+                                        boolean waitSpeed = false;
+                                        boolean timerFound = false;
 
-                                          String[] list = resultText.split("\n");
-                                          boolean waitCadence = false;
-                                          boolean waitPower = false;
-                                          boolean waitResistance = false;
-                                          boolean waitSpeed = false;
-                                          boolean timerFound = false;
-                                          for(String l: list) {
+                                        Log.d(TAG, "Processing " + list.length + " lines of text");
 
-                                              // timestamp
-                                              Pattern p = Pattern.compile("\\d\\d:\\d\\d");
-                                              Matcher m = p.matcher(l);
-                                              if (m.matches() && timerFound == false) {
+                                        for(String l: list) {
+                                            Pattern p = Pattern.compile("\\d\\d:\\d\\d");
+                                            Matcher m = p.matcher(l);
+                                            if (m.matches() && !timerFound) {
                                                 try {
                                                     Duration dtime = parseDuration(l);
                                                     Duration newtime = dtime.minus(delta);
-                                                    String snewtime = String.format("%02d:%02d", (newtime.getSeconds() % 3600) / 60, (newtime.getSeconds() % 60));                                                  
+                                                    String snewtime = String.format("%02d:%02d", (newtime.getSeconds() % 3600) / 60, (newtime.getSeconds() % 60));
                                                     QZService.lastCountdown = snewtime;
+                                                    Log.d(TAG, "Found and processed timer: " + snewtime);
                                                 } catch (Exception ex) {
+                                                    Log.e(TAG, "Error processing timer: " + ex.getMessage());
                                                     QZService.lastCountdown = l;
                                                 }
                                                 timerFound = true;
-                                              }
-                                             if(l.startsWith("CADENCE")) {
-                                                 waitCadence = true;
-                                             } else if(l.startsWith("RESISTANCE")) {
-                                                 waitResistance = true;
-                                             } else if(l.startsWith("OUTPUT")) {
-                                                 waitPower = true;
-                                             } else if(l.startsWith("SPEED")) {
-                                                 waitSpeed = true;
-                                             } else if(waitCadence) {
-                                                 waitCadence = false;
-                                                 QZService.lastCadence = l;
-                                             } else if(waitPower) {
-                                                 waitPower = false;
-                                                 QZService.lastWattage = l;
-                                             } else if(waitResistance) {
-                                                 waitResistance = false;
-                                                 QZService.lastResistance = l;
-                                             } else if(waitSpeed) {
-                                                 waitSpeed = false;
-                                                 QZService.lastSpeed = l;
-                                             }
-                                          }
+                                            }
 
-                                          /*
-                                          for (Text.TextBlock block : result.getTextBlocks()) {
-                                                   String blockText = block.getText();
-                                                        Point[] blockCornerPoints = block.getCornerPoints();
-                                                        Rect blockFrame = block.getBoundingBox();
-                                                        for (Text.Line line : block.getLines()) {
-                                                                 String lineText = line.getText();
-                                                                 Point[] lineCornerPoints = line.getCornerPoints();
-                                                                 Rect lineFrame = line.getBoundingBox();
-                                                                 for (Text.Element element : line.getElements()) {
-                                                                          String elementText = element.getText();
-                                                                          Point[] elementCornerPoints = element.getCornerPoints();
-                                                                          Rect elementFrame = element.getBoundingBox();
-                                                                          for (Text.Symbol symbol : element.getSymbols()) {
-                                                                                   String symbolText = symbol.getText();
-                                                                                        Point[] symbolCornerPoints = symbol.getCornerPoints();
-                                                                                        Rect symbolFrame = symbol.getBoundingBox();
-                                                                                        }
-                                                                 }
-                                                        }
-                                          }*/
-                                     bitmap.recycle();
-                                     isRunning = false;
-                                          }
-                                  })
-                          .addOnFailureListener(
-                          new OnFailureListener() {
-                                  @Override
-                                  public void onFailure(Exception e) {
-                                          // Task failed with an exception
-                                          //Log.e(TAG, "Image fail");
-                                          isRunning = false;
-                                          }
-                                  });
-                          } else {
-                            //Log.e(TAG, "Image ignored");
-                          }
-                      }
+                                            if(l.startsWith("CADENCE")) {
+                                                waitCadence = true;
+                                                Log.d(TAG, "Found CADENCE header");
+                                            } else if(l.startsWith("RESISTANCE")) {
+                                                waitResistance = true;
+                                                Log.d(TAG, "Found RESISTANCE header");
+                                            } else if(l.startsWith("OUTPUT")) {
+                                                waitPower = true;
+                                                Log.d(TAG, "Found OUTPUT header");
+                                            } else if(l.startsWith("SPEED")) {
+                                                waitSpeed = true;
+                                                Log.d(TAG, "Found SPEED header");
+                                            } else if(waitCadence) {
+                                                waitCadence = false;
+                                                QZService.lastCadence = l;
+                                                Log.d(TAG, "Updated cadence: " + l);
+                                            } else if(waitPower) {
+                                                waitPower = false;
+                                                QZService.lastWattage = l;
+                                                Log.d(TAG, "Updated power: " + l);
+                                            } else if(waitResistance) {
+                                                waitResistance = false;
+                                                QZService.lastResistance = l;
+                                                Log.d(TAG, "Updated resistance: " + l);
+                                            } else if(waitSpeed) {
+                                                waitSpeed = false;
+                                                QZService.lastSpeed = l;
+                                                Log.d(TAG, "Updated speed: " + l);
+                                            }
+                                        }
+
+                                        bitmap.recycle();
+                                        isRunning = false;
+                                        Log.d(TAG, "Completed processing cycle");
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        Log.e(TAG, "OCR processing failed: " + e.getMessage());
+                                        isRunning = false;
+                                    }
+                                });
+                    } else {
+                        Log.d(TAG, "Skipping image - processing already in progress");
+                    }
+                } else {
+                    Log.d(TAG, "Null image received");
+                }
             } catch (Exception e) {
+                Log.e(TAG, "Error processing image: " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -264,21 +253,23 @@ public class ScreenCaptureService extends Service {
 
         OrientationChangeCallback(Context context) {
             super(context);
+            Log.d(TAG, "OrientationChangeCallback initialized");
         }
 
         @Override
         public void onOrientationChanged(int orientation) {
             final int rotation = mDisplay.getRotation();
             if (rotation != mRotation) {
+                Log.d(TAG, "Orientation changed. Old: " + mRotation + ", New: " + rotation);
                 mRotation = rotation;
                 try {
-                    // clean up
                     if (mVirtualDisplay != null) mVirtualDisplay.release();
                     if (mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
 
-                    // re-create virtual display depending on device width / height
                     createVirtualDisplay();
+                    Log.d(TAG, "Virtual display recreated after orientation change");
                 } catch (Exception e) {
+                    Log.e(TAG, "Error handling orientation change: " + e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -288,14 +279,24 @@ public class ScreenCaptureService extends Service {
     private class MediaProjectionStopCallback extends MediaProjection.Callback {
         @Override
         public void onStop() {
-            Log.e(TAG, "stopping projection.");
+            Log.d(TAG, "Media projection stopping");
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (mVirtualDisplay != null) mVirtualDisplay.release();
-                    if (mImageReader != null) mImageReader.setOnImageAvailableListener(null, null);
-                    if (mOrientationChangeCallback != null) mOrientationChangeCallback.disable();
+                    if (mVirtualDisplay != null) {
+                        Log.d(TAG, "Releasing virtual display");
+                        mVirtualDisplay.release();
+                    }
+                    if (mImageReader != null) {
+                        Log.d(TAG, "Removing image reader listener");
+                        mImageReader.setOnImageAvailableListener(null, null);
+                    }
+                    if (mOrientationChangeCallback != null) {
+                        Log.d(TAG, "Disabling orientation change callback");
+                        mOrientationChangeCallback.disable();
+                    }
                     mMediaProjection.unregisterCallback(MediaProjectionStopCallback.this);
+                    Log.d(TAG, "Media projection cleanup completed");
                 }
             });
         }
@@ -303,14 +304,17 @@ public class ScreenCaptureService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+        Log.d(TAG, "Service bind requested");
         return null;
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "Service creating");
 
-        // create store dir
+        mHandler = new Handler(Looper.getMainLooper());
+
         File externalFilesDir = getExternalFilesDir(null);
         if (externalFilesDir != null) {
             mStoreDir = externalFilesDir.getAbsolutePath() + "/screenshots/";
@@ -318,40 +322,36 @@ public class ScreenCaptureService extends Service {
             if (!storeDirectory.exists()) {
                 boolean success = storeDirectory.mkdirs();
                 if (!success) {
-                    Log.e(TAG, "failed to create file storage directory.");
+                    Log.e(TAG, "Failed to create file storage directory");
                     stopSelf();
+                } else {
+                    Log.d(TAG, "Created storage directory: " + mStoreDir);
                 }
             }
         } else {
-            Log.e(TAG, "failed to create file storage directory, getExternalFilesDir is null.");
+            Log.e(TAG, "Failed to get external files directory");
             stopSelf();
         }
-
-        // start capture handling thread
-        new Thread() {
-            @Override
-            public void run() {
-                Looper.prepare();
-                mHandler = new Handler();
-                Looper.loop();
-            }
-        }.start();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "Service start command received");
+
         if (isStartCommand(intent)) {
-            // create notification
             Pair<Integer, Notification> notification = NotificationUtils.getNotification(this);
             startForeground(notification.first, notification.second);
-            // start projection
+            Log.d(TAG, "Starting foreground service");
+
             int resultCode = intent.getIntExtra(RESULT_CODE, Activity.RESULT_CANCELED);
             Intent data = intent.getParcelableExtra(DATA);
             startProjection(resultCode, data);
         } else if (isStopCommand(intent)) {
+            Log.d(TAG, "Stopping projection and service");
             stopProjection();
             stopSelf();
         } else {
+            Log.d(TAG, "Invalid command received, stopping service");
             stopSelf();
         }
 
@@ -359,38 +359,42 @@ public class ScreenCaptureService extends Service {
     }
 
     private void startProjection(int resultCode, Intent data) {
+        Log.d(TAG, "Starting media projection");
         MediaProjectionManager mpManager =
                 (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         if (mMediaProjection == null) {
             mMediaProjection = mpManager.getMediaProjection(resultCode, data);
             if (mMediaProjection != null) {
-                // Register callback first before creating virtual display
+                Log.d(TAG, "Media projection created successfully");
                 mMediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
 
-                // display metrics
                 mDensity = Resources.getSystem().getDisplayMetrics().densityDpi;
                 WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
                 mDisplay = windowManager.getDefaultDisplay();
+                Log.d(TAG, "Display density: " + mDensity);
 
-                // register orientation change callback
                 mOrientationChangeCallback = new OrientationChangeCallback(this);
                 if (mOrientationChangeCallback.canDetectOrientation()) {
                     mOrientationChangeCallback.enable();
+                    Log.d(TAG, "Orientation change callback enabled");
                 }
 
-                // create virtual display depending on device width / height
                 createVirtualDisplay();
+            } else {
+                Log.e(TAG, "Failed to create media projection");
             }
         }
     }
 
     private void stopProjection() {
+        Log.d(TAG, "Stopping projection");
         if (mHandler != null) {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     if (mMediaProjection != null) {
                         mMediaProjection.stop();
+                        Log.d(TAG, "Media projection stopped");
                     }
                 }
             });
@@ -399,14 +403,15 @@ public class ScreenCaptureService extends Service {
 
     @SuppressLint("WrongConstant")
     private void createVirtualDisplay() {
-        // get width and height
+        Log.d(TAG, "Creating virtual display");
         mWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
         mHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+        Log.d(TAG, "Screen dimensions: " + mWidth + "x" + mHeight);
 
-        // start capture reader
         mImageReader = ImageReader.newInstance(mWidth, mHeight, PixelFormat.RGBA_8888, 2);
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(SCREENCAP_NAME, mWidth, mHeight,
                 mDensity, getVirtualDisplayFlags(), mImageReader.getSurface(), null, mHandler);
         mImageReader.setOnImageAvailableListener(new ImageAvailableListener(), mHandler);
+        Log.d(TAG, "Virtual display created successfully");
     }
 }
