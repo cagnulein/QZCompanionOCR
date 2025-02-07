@@ -19,7 +19,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.2' // downloads 1.7.1 Metadata
+        classpath 'cm.android.tools.build:gradle:8.2.0'
     }
 }
 

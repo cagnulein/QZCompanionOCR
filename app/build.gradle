@@ -10,7 +10,7 @@ repositories {
 }
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     defaultConfig {
         applicationId "org.cagnulein.qzcompanionpeloton"
