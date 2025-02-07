@@ -364,13 +364,13 @@ public class ScreenCaptureService extends Service {
         if (mMediaProjection == null) {
             mMediaProjection = mpManager.getMediaProjection(resultCode, data);
             if (mMediaProjection != null) {
+                // Register callback first before creating virtual display
+                mMediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
+
                 // display metrics
                 mDensity = Resources.getSystem().getDisplayMetrics().densityDpi;
                 WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
                 mDisplay = windowManager.getDefaultDisplay();
-
-                // create virtual display depending on device width / height
-                createVirtualDisplay();
 
                 // register orientation change callback
                 mOrientationChangeCallback = new OrientationChangeCallback(this);
@@ -378,8 +378,8 @@ public class ScreenCaptureService extends Service {
                     mOrientationChangeCallback.enable();
                 }
 
-                // register media projection stop callback
-                mMediaProjection.registerCallback(new MediaProjectionStopCallback(), mHandler);
+                // create virtual display depending on device width / height
+                createVirtualDisplay();
             }
         }
     }

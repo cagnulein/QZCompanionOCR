@@ -19,6 +19,8 @@
         android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
     <uses-feature android:name="android.hardware.touchscreen"
         android:required="false"/>
@@ -52,8 +54,10 @@
 
         <service android:name="com.cgutman.androidremotedebugger.service.ShellService"
             android:enabled="true"
-            android:exported="false" >
+            android:exported="false"
+            android:foregroundServiceType="dataSync">
         </service>
+
         <service android:name=".FloatingWindowGFG" android:enabled="true" android:exported="true"/>
 
         <service
