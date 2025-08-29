@@ -101,7 +101,12 @@ public class ShellService extends Service implements DeviceConnectionListener {
 			// If we're not already running in the foreground, use a placeholder
 			// notification until a real connection is established. After connection
 			// establishment, the real notification will replace this one.
-			startForeground(FOREGROUND_PLACEHOLDER_ID, createForegroundPlaceholderNotification());
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+				startForeground(FOREGROUND_PLACEHOLDER_ID, createForegroundPlaceholderNotification(), 
+					16); // FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+			} else {
+				startForeground(FOREGROUND_PLACEHOLDER_ID, createForegroundPlaceholderNotification());
+			}
 		}
 
 		// Don't restart if we've been killed. We will have already lost our connections
@@ -220,7 +225,12 @@ public class ShellService extends Service implements DeviceConnectionListener {
 				 * and start it as foreground */
 				foregroundId = getConnectedNotificationId(newConn);
 				nm.cancel(foregroundId);
-				startForeground(foregroundId, createConnectionNotification(newConn, true));
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+					startForeground(foregroundId, createConnectionNotification(newConn, true), 
+						16); // FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+				} else {
+					startForeground(foregroundId, createConnectionNotification(newConn, true));
+				}
 			}
 		}
 		else {
