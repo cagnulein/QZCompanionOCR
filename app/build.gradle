@@ -10,7 +10,7 @@ android {
         applicationId "org.cagnulein.qzcompanionpeloton"
         minSdk 21
         targetSdk 36
-        versionCode 19
+        versionCode 20
         versionName "1.4.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
