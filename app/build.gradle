@@ -2,20 +2,14 @@ plugins {
     id 'com.android.application'
 }
 
-repositories {
-    google()
-    jcenter()
-    maven { url 'https://jitpack.io' }
-    maven { url 'https://dl.bintray.com/rvalerio/maven' }
-}
-
 android {
-    compileSdkVersion 34
+    compileSdk 36
+    namespace "org.cagnulein.qzcompanionpeloton"
 
     defaultConfig {
         applicationId "org.cagnulein.qzcompanionpeloton"
-        minSdkVersion 21
-        targetSdkVersion 36
+        minSdk 21
+        targetSdk 36
         versionCode 19
         versionName "1.4.3"
 
@@ -32,28 +26,31 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
 }
 
-apply plugin: 'com.android.application'
-
 dependencies {
-    //compile 'com.rvalerio:fgchecker:1.1.0'
-    implementation "androidx.core:core-ktx:1.9.0"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2"
-    implementation 'com.google.mlkit:text-recognition:16.0.0'
+    implementation "androidx.core:core-ktx:1.13.1"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7"
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
 
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.9.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }
 
 configurations.all {
     resolutionStrategy {
-        force 'org.jetbrains.kotlin:kotlin-stdlib:1.7.20'
-        force 'org.jetbrains.kotlin:kotlin-stdlib-common:1.7.20'
+        force "org.jetbrains.kotlin:kotlin-stdlib:1.9.25"
+        force "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.25"
         exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
         exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
     }
