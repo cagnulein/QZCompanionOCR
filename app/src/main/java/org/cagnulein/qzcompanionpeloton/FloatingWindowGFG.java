@@ -29,17 +29,37 @@ import android.content.SharedPreferences;
 
 public class FloatingWindowGFG extends Service {
 
-	 // The reference variables for the
-	 // ViewGroup, WindowManager.LayoutParams,
-	 // WindowManager, Button, EditText classes are created
 	 private ViewGroup floatView;
 	 private int LAYOUT_TYPE;
 	 private WindowManager.LayoutParams floatWindowLayoutParam;
 	 private WindowManager windowManager;
 	 private Button maximizeBtn;
 
-         // Retrieve the user preference node for the package com.mycompany
          SharedPreferences sharedPreferences;
+
+	 private final SharedPreferences.OnSharedPreferenceChangeListener prefListener =
+		 (prefs, key) -> {
+			 if (floatWindowLayoutParam == null || windowManager == null) return;
+			 android.graphics.Point sz = new android.graphics.Point();
+			 windowManager.getDefaultDisplay().getSize(sz);
+			 boolean changed = false;
+			 if (PREF_NAME_WIDTH.equals(key)) {
+				 floatWindowLayoutParam.width = Math.min(prefs.getInt(PREF_NAME_WIDTH, 800), sz.x);
+				 changed = true;
+			 } else if (PREF_NAME_HEIGHT.equals(key)) {
+				 floatWindowLayoutParam.height = Math.min(prefs.getInt(PREF_NAME_HEIGHT, 400), sz.y);
+				 changed = true;
+			 } else if (PREF_NAME_X.equals(key)) {
+				 floatWindowLayoutParam.x = Math.max(0, Math.min(prefs.getInt(PREF_NAME_X, 0), sz.x - floatWindowLayoutParam.width));
+				 changed = true;
+			 } else if (PREF_NAME_Y.equals(key)) {
+				 floatWindowLayoutParam.y = Math.max(0, Math.min(prefs.getInt(PREF_NAME_Y, 0), sz.y - floatWindowLayoutParam.height));
+				 changed = true;
+			 }
+			 if (changed) {
+				 windowManager.updateViewLayout(floatView, floatWindowLayoutParam);
+			 }
+		 };
 
      // Preference key name
 	 public static final String PREF_NAME_X = "floatWindowLayoutUpdateParamX";
@@ -76,6 +96,7 @@ public class FloatingWindowGFG extends Service {
 		  floatView = (ViewGroup) inflater.inflate(R.layout.floating_layout, null);
 
 		 sharedPreferences = getSharedPreferences("QZ", MODE_PRIVATE);
+		 sharedPreferences.registerOnSharedPreferenceChangeListener(prefListener);
 
 		 int zoom = sharedPreferences.getInt("zoom", 100);
 
@@ -123,27 +144,28 @@ public class FloatingWindowGFG extends Service {
 		  // 5) Next parameter is Layout_Format. System chooses a format that supports
 		  // translucency by PixelFormat.TRANSLUCENT
 
-		 int _width = sharedPreferences.getInt(PREF_NAME_WIDTH, 800);
-		 int _height = sharedPreferences.getInt(PREF_NAME_HEIGHT, 400);
+		 android.graphics.Point screenSize = new android.graphics.Point();
+		 windowManager.getDefaultDisplay().getSize(screenSize);
+		 int screenW = screenSize.x;
+		 int screenH = screenSize.y;
+
+		 int _width = Math.min(sharedPreferences.getInt(PREF_NAME_WIDTH, 800), screenW);
+		 int _height = Math.min(sharedPreferences.getInt(PREF_NAME_HEIGHT, 400), screenH);
 
 		 floatWindowLayoutParam = new WindowManager.LayoutParams(
-                          (int) (_width ),
-                                         (int) (_height ),
+                          _width,
+                          _height,
 					 LAYOUT_TYPE,
 					 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
 					 PixelFormat.TRANSLUCENT
 					);
 
-		  // The Gravity of the Floating Window is set.
-		  // The Window will appear in the center of the screen
 		  floatWindowLayoutParam.gravity = Gravity.TOP | Gravity.LEFT;
 
-		  // X and Y value of the window is set
-		  floatWindowLayoutParam.x = 0;
-		  floatWindowLayoutParam.y = 0;
-
-                  floatWindowLayoutParam.x = sharedPreferences.getInt(PREF_NAME_X, floatWindowLayoutParam.x);
-                  floatWindowLayoutParam.y = sharedPreferences.getInt(PREF_NAME_Y, floatWindowLayoutParam.y);
+		  int savedX = sharedPreferences.getInt(PREF_NAME_X, 0);
+		  int savedY = sharedPreferences.getInt(PREF_NAME_Y, 0);
+		  floatWindowLayoutParam.x = Math.max(0, Math.min(savedX, screenW - _width));
+		  floatWindowLayoutParam.y = Math.max(0, Math.min(savedY, screenH - _height));
 
 		  // The ViewGroup that inflates the floating_layout.xml is
 		  // added to the WindowManager with all the parameters
@@ -205,8 +227,8 @@ public class FloatingWindowGFG extends Service {
 	 @Override
 	 public void onDestroy() {
 		  super.onDestroy();
+		  sharedPreferences.unregisterOnSharedPreferenceChangeListener(prefListener);
 		  stopSelf();
-		  // Window is removed from the screen
 		  windowManager.removeView(floatView);
 		}
 }
