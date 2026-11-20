@@ -34,7 +34,7 @@ jobs:
             -o /tmp/bundletool.jar
           java -jar /tmp/bundletool.jar dump config --bundle="$BUNDLE" > /tmp/bundle-config.txt
           python3 tools/check_16kb_elf.py "$BUNDLE"
-          if unzip -Z1 "$BUNDLE" | grep -Eq '/lib/(arm64-v8a|x86_64)/.*\\.so$'; then
+          if unzip -Z1 "$BUNDLE" | grep -Eq '/lib/(arm64-v8a|x86_64)/.*[.]so$'; then
             grep -q 'PAGE_ALIGNMENT_16K' /tmp/bundle-config.txt || {
               echo "App Bundle does not request 16 KB native library zip alignment"
               cat /tmp/bundle-config.txt
