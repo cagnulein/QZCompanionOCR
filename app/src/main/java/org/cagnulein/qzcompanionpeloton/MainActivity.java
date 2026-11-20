@@ -14,6 +14,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.graphics.Point;
+import android.view.WindowManager;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.provider.Settings;
@@ -76,6 +78,36 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
     EditText top;
     EditText left;
     EditText zoom;
+    private boolean loadingGeometryFields = false;
+
+    private String geometryKey(String originalKey) {
+        return FloatingWindowStyle.key(originalKey,
+                sharedPreferences.getBoolean(FloatingWindowStyle.PREFERENCE, false));
+    }
+
+    private void loadFloatingGeometry() {
+        WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+        Point screen = new Point();
+        wm.getDefaultDisplay().getSize(screen);
+        boolean horizontal = sharedPreferences.getBoolean(FloatingWindowStyle.PREFERENCE, false);
+        int barHeight = Math.min(screen.y, Math.max(1,
+                (int) (FloatingWindowStyle.DEFAULT_BAR_HEIGHT_DP *
+                        getResources().getDisplayMetrics().density + 0.5f)));
+        loadingGeometryFields = true;
+        try {
+            width.setText(String.valueOf(sharedPreferences.getInt(geometryKey(FloatingWindowGFG.PREF_NAME_WIDTH),
+                    horizontal ? screen.x : 800)));
+            height.setText(String.valueOf(sharedPreferences.getInt(geometryKey(FloatingWindowGFG.PREF_NAME_HEIGHT),
+                    horizontal ? barHeight : 400)));
+            top.setText(String.valueOf(sharedPreferences.getInt(geometryKey(FloatingWindowGFG.PREF_NAME_Y),
+                    horizontal ? Math.max(0, screen.y - barHeight) : 400)));
+            left.setText(String.valueOf(sharedPreferences.getInt(geometryKey(FloatingWindowGFG.PREF_NAME_X),
+                    horizontal ? 0 : 400)));
+        } finally {
+            loadingGeometryFields = false;
+        }
+    }
+
     static Button dumplog;
 
     public void onDestroy() {
@@ -230,7 +262,8 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 try{
                     SharedPreferences.Editor myEdit = sharedPreferences.edit();
-                    myEdit.putInt(FloatingWindowGFG.PREF_NAME_WIDTH, Integer.parseInt(String.valueOf(width.getText())));
+                    if (loadingGeometryFields) return;
+                    myEdit.putInt(geometryKey(FloatingWindowGFG.PREF_NAME_WIDTH), Integer.parseInt(String.valueOf(width.getText())));
                     myEdit.commit();
                 } catch (NumberFormatException ex) {
 
@@ -253,7 +286,8 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 try {
                     SharedPreferences.Editor myEdit = sharedPreferences.edit();
-                    myEdit.putInt(FloatingWindowGFG.PREF_NAME_HEIGHT, Integer.parseInt(String.valueOf(height.getText())));
+                    if (loadingGeometryFields) return;
+                    myEdit.putInt(geometryKey(FloatingWindowGFG.PREF_NAME_HEIGHT), Integer.parseInt(String.valueOf(height.getText())));
                     myEdit.commit();
                 } catch (NumberFormatException ex) {
 
@@ -276,7 +310,8 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 try {
                     SharedPreferences.Editor myEdit = sharedPreferences.edit();
-                    myEdit.putInt(FloatingWindowGFG.PREF_NAME_Y, Integer.parseInt(String.valueOf(top.getText())));
+                    if (loadingGeometryFields) return;
+                    myEdit.putInt(geometryKey(FloatingWindowGFG.PREF_NAME_Y), Integer.parseInt(String.valueOf(top.getText())));
                     myEdit.commit();
                 } catch (NumberFormatException ex) {
 
@@ -299,7 +334,8 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 try {
                     SharedPreferences.Editor myEdit = sharedPreferences.edit();
-                    myEdit.putInt(FloatingWindowGFG.PREF_NAME_X, Integer.parseInt(String.valueOf(left.getText())));
+                    if (loadingGeometryFields) return;
+                    myEdit.putInt(geometryKey(FloatingWindowGFG.PREF_NAME_X), Integer.parseInt(String.valueOf(left.getText())));
                     myEdit.commit();
                 } catch (NumberFormatException ex) {
 
@@ -335,12 +371,8 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
             }
         });
 
-        int w = sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_WIDTH, 800);
-        width.setText(Integer.toString(w));
-        height.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_HEIGHT, 400)));
-        top.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_Y, 400)));
+        loadFloatingGeometry();
         zoom.setText(Integer.toString(sharedPreferences.getInt("zoom", 100)));
-        left.setText(Integer.toString(sharedPreferences.getInt(FloatingWindowGFG.PREF_NAME_X, 400)));
 
         int device = sharedPreferences.getInt("device", R.id.bike);
         RadioButton radioButton;
@@ -370,6 +402,17 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
                 myEdit.putBoolean("autofloating", autofloating.isChecked());
                 myEdit.commit();
                 b_autofloating = autofloating.isChecked();
+            }
+        });
+
+        Switch horizontalFloating = findViewById(R.id.horizontalfloating);
+        horizontalFloating.setChecked(sharedPreferences.getBoolean(FloatingWindowStyle.PREFERENCE, false));
+        horizontalFloating.setOnCheckedChangeListener((button, checked) -> {
+            sharedPreferences.edit().putBoolean(FloatingWindowStyle.PREFERENCE, checked).apply();
+            loadFloatingGeometry();
+            if (floating_open && !QZService.address.isEmpty()) {
+                FloatingHandler.hide();
+                FloatingHandler.show(MainActivity.this, QZService.address, 60);
             }
         });
 
