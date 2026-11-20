@@ -226,6 +226,20 @@
                     android:text="Auto Show Floating" />
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Switch
+                    android:id="@+id/horizontalfloating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Horizontal floating metrics (QZ)"
+                    android:contentDescription="Use a horizontal QZ metrics bar instead of the vertical floating window" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <ScrollView
