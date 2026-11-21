@@ -8,6 +8,12 @@ import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Handler;
+import android.os.Looper;
+import android.webkit.JavascriptInterface;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
@@ -38,6 +44,10 @@ public class FloatingWindowGFG extends Service {
          SharedPreferences sharedPreferences;
          private boolean horizontalMode;
          private boolean fallbackAttempted;
+         private final Handler mainHandler = new Handler(Looper.getMainLooper());
+         private boolean expanded;
+         private int collapsedWindowHeight;
+         private int collapsedWindowY;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener prefListener =
         (prefs, key) -> {
@@ -67,6 +77,10 @@ public class FloatingWindowGFG extends Service {
                         screen.x - floatWindowLayoutParam.width));
                 floatWindowLayoutParam.y = Math.max(0, Math.min(floatWindowLayoutParam.y,
                         screen.y - floatWindowLayoutParam.height));
+                if (!expanded) {
+                    collapsedWindowHeight = floatWindowLayoutParam.height;
+                    collapsedWindowY = floatWindowLayoutParam.y;
+                }
                 windowManager.updateViewLayout(floatView, floatWindowLayoutParam);
             }
         };
@@ -114,8 +128,21 @@ public class FloatingWindowGFG extends Service {
                   WebView wv = (WebView)floatView.findViewById(R.id.webview);
                   final String originalUrl = FloatingHandler._address;
                   final String displayUrl = FloatingWindowStyle.url(originalUrl, horizontalMode);
-                  if (horizontalMode) setWebViewMargins(wv, 0);
+                  if (horizontalMode) {
+                      setWebViewMargins(wv, 0);
+                      // Expose only overlay-window actions, never general Android or QZ APIs.
+                      wv.addJavascriptInterface(new CompanionJavascriptBridge(), "Android");
+                  }
                   wv.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public void onPageFinished(WebView view, String url) {
+                          super.onPageFinished(view, url);
+                          // Never inject into a redirected or unrelated page.
+                          if (horizontalMode && displayUrl.equals(url)) {
+                              injectHorizontalPatch(view);
+                          }
+                      }
+
                       @Override
                       public boolean shouldOverrideUrlLoading(WebView view, String url) {
                           view.loadUrl(url);
@@ -186,6 +213,8 @@ public class FloatingWindowGFG extends Service {
                  PixelFormat.TRANSLUCENT);
          floatWindowLayoutParam.gravity = Gravity.TOP | Gravity.LEFT;
          applySavedGeometry();
+         collapsedWindowHeight = floatWindowLayoutParam.height;
+         collapsedWindowY = floatWindowLayoutParam.y;
 
 		  // The ViewGroup that inflates the floating_layout.xml is
 		  // added to the WindowManager with all the parameters
@@ -269,8 +298,76 @@ public class FloatingWindowGFG extends Service {
         floatWindowLayoutParam.height = height;
         floatWindowLayoutParam.x = Math.max(0, Math.min(x, screen.x - width));
         floatWindowLayoutParam.y = Math.max(0, Math.min(y, screen.y - height));
+        expanded = false;
+        collapsedWindowHeight = floatWindowLayoutParam.height;
+        collapsedWindowY = floatWindowLayoutParam.y;
         if (floatView != null && floatView.isAttachedToWindow()) {
             windowManager.updateViewLayout(floatView, floatWindowLayoutParam);
+        }
+    }
+
+    private void injectHorizontalPatch(WebView view) {
+        try (InputStream input = getAssets().open("companion_horizontal.js");
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int size;
+            while ((size = input.read(buffer)) != -1) {
+                output.write(buffer, 0, size);
+            }
+            view.evaluateJavascript(output.toString("UTF-8"), null);
+        } catch (IOException error) {
+            Log.e("QZ", "Failed to inject Companion horizontal overlay patch", error);
+        }
+    }
+
+    private void expandHorizontalWindow(int extraCssPixels) {
+        if (!horizontalMode || floatWindowLayoutParam == null || floatView == null) return;
+        android.graphics.Point screen = new android.graphics.Point();
+        windowManager.getDefaultDisplay().getSize(screen);
+        int extraPixels = Math.max(0, (int) (extraCssPixels *
+                getResources().getDisplayMetrics().density + 0.5f));
+        int newHeight = Math.min(screen.y, collapsedWindowHeight + extraPixels);
+        int originalBottom = collapsedWindowY + collapsedWindowHeight;
+        floatWindowLayoutParam.height = newHeight;
+        floatWindowLayoutParam.y = Math.max(0, Math.min(originalBottom - newHeight, screen.y - newHeight));
+        expanded = newHeight > collapsedWindowHeight;
+        windowManager.updateViewLayout(floatView, floatWindowLayoutParam);
+    }
+
+    private void restoreHorizontalWindow() {
+        if (!horizontalMode || !expanded || floatWindowLayoutParam == null || floatView == null) return;
+        floatWindowLayoutParam.height = collapsedWindowHeight;
+        floatWindowLayoutParam.y = collapsedWindowY;
+        expanded = false;
+        windowManager.updateViewLayout(floatView, floatWindowLayoutParam);
+    }
+
+    private class CompanionJavascriptBridge {
+        @JavascriptInterface
+        public void expandFloatingWindow(int extraCssPixels) {
+            mainHandler.post(() -> expandHorizontalWindow(extraCssPixels));
+        }
+
+        @JavascriptInterface
+        public void restoreFloatingWindow() {
+            mainHandler.post(() -> restoreHorizontalWindow());
+        }
+
+        @JavascriptInterface
+        public void enableDraggingMargins() {
+            // The user positions Companion using its own geometry fields.
+            // QZ's drag-margin events must not re-layout the Shield overlay.
+        }
+
+        @JavascriptInterface
+        public void closeCompanionWindow() {
+            mainHandler.post(() -> {
+                if (!horizontalMode) return;
+                // Suppress automatic UDP reopen until a manual show or a new session.
+                MainActivity.horizontalOverlayDismissed = true;
+                MainActivity.floating_open = false;
+                stopSelf();
+            });
         }
     }
 
