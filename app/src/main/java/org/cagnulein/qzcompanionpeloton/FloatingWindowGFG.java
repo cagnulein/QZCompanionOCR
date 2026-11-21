@@ -342,7 +342,7 @@ public class FloatingWindowGFG extends Service {
         windowManager.updateViewLayout(floatView, floatWindowLayoutParam);
     }
 
-    private class CompanionJavascriptBridge {
+    public class CompanionJavascriptBridge {
         @JavascriptInterface
         public void expandFloatingWindow(int extraCssPixels) {
             mainHandler.post(() -> expandHorizontalWindow(extraCssPixels));
