@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
     private static boolean ADBConnected = false;
     private static String appLogs = "";
     public static boolean floating_open = false;
+    public static volatile boolean horizontalOverlayDismissed = false;
     public static boolean b_autofloating;
 
 	private final ShellRuntime shellRuntime = new ShellRuntime();
@@ -421,8 +422,10 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         dumplog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(!floating_open)
+                if(!floating_open) {
+                    horizontalOverlayDismissed = false;
                     FloatingHandler.show(me, QZService.address,  60);
+                }
                 else
                     FloatingHandler.hide();
 
