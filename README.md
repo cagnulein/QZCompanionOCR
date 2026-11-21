@@ -15,7 +15,18 @@ Horizontal floating metrics (beta):
 - Width, height, left and top are stored separately for vertical and horizontal layouts.
   The horizontal layout initially fills the screen width and appears as a short bar at the bottom.
 - If a QZ version returns HTTP 404 for the horizontal page, Companion falls back to the vertical page.
-- Advanced controls and metric selection in the horizontal HTML may be limited (the page belongs to QZ).
+- Companion injects its own app/src/main/assets/companion_horizontal.js after the QZ horizontal page loads.
+  This restores quick-action buttons after QZ rebuilds the metrics and makes them visible on Android TV.
+- The initial bar shows Power, Cadence, Heart Rate, Resistance and Peloton Resistance.
+  The metric selector stores changes in Companion WebView localStorage, without writing QZ tile_* settings.
+- The minimal Android bridge expands/restores the Companion window for selectors and controls.
+  The Close action hides the Companion overlay without sending a floating_close command to QZ;
+  UDP auto-show remains suppressed until the user opens it again or QZ reconnects.
+- Android TV remote D-pad navigation of the non-focusable overlay is not supported.
+  Use Companion's width/height/position settings and a pointer to interact with the bar.
+- Node regression tests can be run with `node --test tools/test-companion-horizontal.cjs`.
+  They cover QZ re-rendering, local preferences, Close and re-injection. They do not replace
+  a real Nvidia Shield + Peloton test.
 
 Google Play 16 KB release verification:
 - The Android GitHub Actions workflow builds a new release AAB, checks its bundle
