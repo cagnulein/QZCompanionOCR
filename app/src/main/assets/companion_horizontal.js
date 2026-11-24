@@ -29,6 +29,19 @@
   }
 
   function readSelection() {
+    // Companion's Android settings screen is the source of truth.
+    // An unset native preference deliberately falls back to older WebView storage.
+    try {
+      if (window.Android && typeof Android.getCompanionMetrics === "function") {
+        var nativeCsv = Android.getCompanionMetrics();
+        if (typeof nativeCsv === "string" && nativeCsv.length) {
+          var nativeIds = filterSelection(nativeCsv.split(","));
+          if (nativeIds.length) return nativeIds;
+        }
+      }
+    } catch (error) {
+      console.warn("Companion: Android metric preferences unavailable", error);
+    }
     try {
       var stored = window.localStorage.getItem(STORAGE_KEY);
       if (stored) {
@@ -49,21 +62,19 @@
     });
   }
 
-  function ensureQuickActions() {
-    var metricsBar = document.getElementById("metrics-bar");
-    if (!metricsBar || metricsBar.querySelector(".quick-actions")) return;
+  // QZ destroys its original quick-action buttons on each render.
+  // Companion intentionally keeps the overlay read-only: Android TV selection
+  // is handled by the focusable settings dialog in MainActivity instead.
+  bar.addEventListener("click", function (event) {
+    event.stopImmediatePropagation();
+  }, true);
 
-    var actions = document.createElement("div");
-    actions.className = "quick-actions";
-    actions.innerHTML =
-      '<button class="quick-action-btn" onclick="Start()" title="Start/Pause">▶/⏸</button>' +
-      '<button class="quick-action-btn" onclick="Stop()" title="Stop">⏹</button>' +
-      '<button class="quick-action-btn autoresistance" onclick="AutoResistance()" title="Auto Resistance">🧲</button>' +
-      '<button class="quick-action-btn" onclick="toggleMetricSelector()" title="Select Metrics">⚙</button>' +
-      '<button class="quick-action-btn" onclick="toggleCompletePanel()" title="Full Controls">⋯</button>' +
-      '<button class="quick-action-btn" onclick="Close()" title="Close Companion">✕</button>';
-    metricsBar.appendChild(actions);
-  }
+  window.setCompanionMetricSelection = function (csv) {
+    var next = filterSelection(typeof csv === "string" ? csv.split(",") : []);
+    if (!next.length) return;
+    selectedMetrics = next;
+    window.updateHorizontalMetrics();
+  };
 
   // QZ rebuilds #metrics-bar using innerHTML, which destroys its .quick-actions node.
   // Apply Companion-local choices whenever QZ refreshes the bar (including after getsettings).
@@ -71,7 +82,6 @@
   window.updateHorizontalMetrics = function () {
     applySelection();
     var result = qzUpdateHorizontalMetrics.apply(this, arguments);
-    ensureQuickActions();
     return result;
   };
 
@@ -91,6 +101,9 @@
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedMetrics));
     } catch (error) {
       console.warn("Companion: could not save metric preferences", error);
+    }
+    if (window.Android && typeof Android.saveCompanionMetrics === "function") {
+      Android.saveCompanionMetrics(selectedMetrics.join(","));
     }
 
     window.updateHorizontalMetrics();
@@ -115,14 +128,13 @@
   var style = document.createElement("style");
   style.id = "qz-companion-horizontal-style";
   style.textContent =
-    ".horizontal-bar { box-sizing: border-box; padding-right: 255px; }" +
-    ".horizontal-bar .quick-actions {" +
-    "display:flex !important;position:fixed;top:5px;right:5px;z-index:20;" +
-    "align-items:center;background:rgba(0,0,0,.85);padding:3px;border-radius:5px;" +
-    "}" +
+    ".horizontal-bar {box-sizing:border-box;padding-right:0;}" +
+    // Never display overlay controls on top of Peloton during a workout.
+    ".horizontal-bar .quick-actions, .horizontal-bar button, " +
+    "#controls-panel, #metric-selector, #complete-panel " +
+    "{display:none !important;}" +
     ".horizontal-bar .metric {min-width:90px;}" +
-    ".horizontal-bar .metric-value {font-size:24px;}" +
-    "#metric-selector, #controls-panel, #complete-panel {box-sizing:border-box;}";
+    ".horizontal-bar .metric-value {font-size:24px;}";
   document.head.appendChild(style);
 
   // Initial render is safe even if QZ already ran initializeTemplate().
