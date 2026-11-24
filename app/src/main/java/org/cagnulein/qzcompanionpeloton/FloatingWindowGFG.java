@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.JavascriptInterface;
+import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -44,6 +45,7 @@ public class FloatingWindowGFG extends Service {
          SharedPreferences sharedPreferences;
          private boolean horizontalMode;
          private boolean fallbackAttempted;
+         private WebView horizontalWebView;
          private final Handler mainHandler = new Handler(Looper.getMainLooper());
          private boolean expanded;
          private int collapsedWindowHeight;
@@ -51,6 +53,22 @@ public class FloatingWindowGFG extends Service {
 
     private final SharedPreferences.OnSharedPreferenceChangeListener prefListener =
         (prefs, key) -> {
+            if (CompanionMetrics.PREFERENCE.equals(key)) {
+                if (horizontalMode && horizontalWebView != null) {
+                    String selected = CompanionMetrics.normalize(
+                            prefs.getString(CompanionMetrics.PREFERENCE,
+                                    CompanionMetrics.DEFAULT_SELECTION));
+                    mainHandler.post(() -> {
+                        if (horizontalMode && horizontalWebView != null) {
+                            String argument = JSONObject.quote(selected);
+                            horizontalWebView.evaluateJavascript(
+                                    "if (window.setCompanionMetricSelection) " +
+                                    "window.setCompanionMetricSelection(" + argument + ");", null);
+                        }
+                    });
+                }
+                return;
+            }
             if (floatWindowLayoutParam == null || windowManager == null || floatView == null) return;
             android.graphics.Point screen = new android.graphics.Point();
             windowManager.getDefaultDisplay().getSize(screen);
@@ -126,6 +144,7 @@ public class FloatingWindowGFG extends Service {
 		 int zoom = sharedPreferences.getInt("zoom", 100);
 
                   WebView wv = (WebView)floatView.findViewById(R.id.webview);
+                  horizontalWebView = wv;
                   final String originalUrl = FloatingHandler._address;
                   final String displayUrl = FloatingWindowStyle.url(originalUrl, horizontalMode);
                   if (horizontalMode) {
@@ -343,6 +362,19 @@ public class FloatingWindowGFG extends Service {
     }
 
     public class CompanionJavascriptBridge {
+        @JavascriptInterface
+        public String getCompanionMetrics() {
+            // Missing preference means use the previous WebView-local selection if available.
+            return sharedPreferences.getString(CompanionMetrics.PREFERENCE, "");
+        }
+
+        @JavascriptInterface
+        public void saveCompanionMetrics(String selectedCsv) {
+            if (!horizontalMode || selectedCsv == null || selectedCsv.trim().isEmpty()) return;
+            sharedPreferences.edit().putString(CompanionMetrics.PREFERENCE,
+                    CompanionMetrics.normalize(selectedCsv)).apply();
+        }
+
         @JavascriptInterface
         public void expandFloatingWindow(int extraCssPixels) {
             mainHandler.post(() -> expandHorizontalWindow(extraCssPixels));
