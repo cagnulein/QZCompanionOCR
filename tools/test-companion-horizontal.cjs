@@ -1,4 +1,4 @@
-// No external dependencies: exercise the injected patch against a mocked QZ DOM.
+// No external dependencies: test the Companion injection against QZ's DOM contract.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -14,8 +14,10 @@ const metrics = [
   'distance', 'elapsed', 'rowremainingtime', 'pelotonoffset', 'gears', 'nextrow'
 ];
 
-function makeFixture(sharedStorage = new Map(), withBridge = true) {
+function makeFixture(sharedStorage = new Map(), opts = {}) {
   const state = {
+    nativeMetrics: opts.nativeMetrics || '',
+    nativeWrites: [],
     qzSettingsWrites: 0,
     qzCloseCalls: 0,
     localCloseCalls: 0,
@@ -23,6 +25,7 @@ function makeFixture(sharedStorage = new Map(), withBridge = true) {
     renders: [],
     styles: [],
     activeMetrics: [],
+    clickHandler: null,
     selectors: { 'metric-selector': { style: { display: 'block' } } }
   };
   let markup = '';
@@ -31,13 +34,16 @@ function makeFixture(sharedStorage = new Map(), withBridge = true) {
     get innerHTML() { return markup; },
     set innerHTML(next) {
       markup = next;
-      this.children = [];
+      this.children = [];  // QZ replaces all previous quick actions.
     },
     querySelector(selector) {
       return selector === '.quick-actions'
         ? this.children.find(node => node.className === 'quick-actions') || null : null;
     },
-    appendChild(node) { this.children.push(node); }
+    appendChild(node) { this.children.push(node); },
+    addEventListener(name, callback, capture) {
+      if (name === 'click') state.clickHandler = {callback, capture};
+    }
   };
   state.selectors['metrics-bar'] = bar;
   const localStorage = {
@@ -59,18 +65,19 @@ function makeFixture(sharedStorage = new Map(), withBridge = true) {
       head: { appendChild(el) { state.styles.push(el); } }
     },
     updateHorizontalMetrics() {
-      // Simulates the QZ implementation (innerHTML clears .quick-actions).
       bar.innerHTML = '';
       state.renders.push({...context.metricsPreference});
     },
-    saveMetricPreferences() {
-      // Calling the QZ original would send tile_* updates to the iPad!
-      state.qzSettingsWrites++;
-    },
+    saveMetricPreferences() { state.qzSettingsWrites++; },
     Close() { state.qzCloseCalls++; }
   };
-  if (withBridge) {
+  if (opts.bridge !== false) {
     context.Android = {
+      getCompanionMetrics() { return state.nativeMetrics; },
+      saveCompanionMetrics(csv) {
+        state.nativeMetrics = csv;
+        state.nativeWrites.push(csv);
+      },
       restoreFloatingWindow() { state.restoreCalls++; },
       closeCompanionWindow() { state.localCloseCalls++; }
     };
@@ -80,59 +87,96 @@ function makeFixture(sharedStorage = new Map(), withBridge = true) {
   return {state, context, bar, sharedStorage};
 }
 
-test('defaults to five useful EX3 metrics independently from QZ settings', () => {
+test('starts with five bicycle metrics and no persistent overlay controls', () => {
   const {state, bar} = makeFixture();
   assert.deepEqual(
     metrics.filter(id => state.renders.at(-1)[id]),
     ['cadence', 'heart', 'watt', 'resistance', 'pelotonresistance']
   );
-  assert.ok(bar.querySelector('.quick-actions'));
-  assert.match(bar.querySelector('.quick-actions').innerHTML, /toggleMetricSelector/);
-  assert.match(bar.querySelector('.quick-actions').innerHTML, /Close Companion/);
-  assert.equal(state.styles.length, 1);
+  assert.equal(bar.querySelector('.quick-actions'), null);
+  assert.equal(bar.children.length, 0);
+  assert.match(state.styles[0].textContent, /quick-actions/);
+  assert.match(state.styles[0].textContent, /display:none !important/);
+  assert.match(state.styles[0].textContent, /#controls-panel/);
 });
 
-test('quick actions survive every QZ metrics rerender including getsettings callback', () => {
+test('QZ metric refresh never reinstates action buttons or changes selected metrics', () => {
   const {context, state, bar} = makeFixture();
   for (let i = 0; i < 4; i++) {
-    // QZ overwrites the preferences with the iPad tile_* settings.
     for (const id of metrics) context.metricsPreference[id] = true;
     context.updateHorizontalMetrics();
-    assert.equal(bar.children.length, 1);
-    assert.ok(bar.querySelector('.quick-actions'));
+    assert.equal(bar.children.length, 0);
     assert.equal(state.renders.at(-1).speed, false);
     assert.equal(state.renders.at(-1).watt, true);
   }
+  assert.equal(state.qzSettingsWrites, 0);
 });
 
-test('selector saves only to Companion WebView storage, never to QZ tile_* settings', () => {
+test('tapping the read-only horizontal bar cannot toggle QZ controls', () => {
+  const {state} = makeFixture();
+  assert.equal(state.clickHandler.capture, true);
+  let blocked = 0;
+  state.clickHandler.callback({stopImmediatePropagation() {blocked++;}});
+  assert.equal(blocked, 1);
+});
+
+test('native TV settings override previous WebView localStorage preferences', () => {
+  const storage = new Map([
+    ['qzcompanion.horizontal.metrics.v1', JSON.stringify(['heart'])]
+  ]);
+  const {state} = makeFixture(storage, {nativeMetrics: 'speed,calories'});
+  assert.equal(state.renders.at(-1).speed, true);
+  assert.equal(state.renders.at(-1).calories, true);
+  assert.equal(state.renders.at(-1).heart, false);
+});
+
+test('Android selection change updates the running overlay without a QZ settings write', () => {
+  const {context, state} = makeFixture();
+  context.setCompanionMetricSelection('speed,calories,watts-unknown');
+  assert.equal(state.renders.at(-1).speed, true);
+  assert.equal(state.renders.at(-1).calories, true);
+  assert.equal(state.renders.at(-1).watt, false);
+  assert.equal(state.qzSettingsWrites, 0);
+  context.setCompanionMetricSelection('');
+  assert.equal(state.renders.at(-1).speed, true);
+});
+
+test('legacy WebView selection saves to localStorage and native Companion, never QZ', () => {
   const {state, context, sharedStorage} = makeFixture();
-  state.activeMetrics = ['watt', 'cadence', 'watt', 'not-a-real-metric'];
+  state.activeMetrics = ['watt', 'cadence', 'watt', 'unknown'];
   context.saveMetricPreferences();
-  assert.deepEqual(JSON.parse(sharedStorage.get('qzcompanion.horizontal.metrics.v1')), ['watt', 'cadence']);
+  assert.deepEqual(JSON.parse(sharedStorage.get('qzcompanion.horizontal.metrics.v1')),
+      ['watt', 'cadence']);
+  assert.deepEqual(state.nativeWrites, ['watt,cadence']);
   assert.equal(state.qzSettingsWrites, 0);
   assert.equal(state.selectors['metric-selector'].style.display, 'none');
   assert.equal(state.restoreCalls, 1);
   assert.equal(state.renders.at(-1).cadence, true);
   assert.equal(state.renders.at(-1).heart, false);
-  context.metricsPreference.heart = true;
-  context.updateHorizontalMetrics();
-  assert.equal(state.renders.at(-1).heart, false);
 });
 
-test('per-device local metrics persist when the WebView reloads', () => {
+test('selected metrics persist when WebView reloads and reads Android preferences', () => {
   const storage = new Map();
   const first = makeFixture(storage);
   first.state.activeMetrics = ['heart', 'watt'];
   first.context.saveMetricPreferences();
-  const second = makeFixture(storage);
+  const second = makeFixture(storage, {nativeMetrics: first.state.nativeMetrics});
   assert.equal(second.state.renders.at(-1).heart, true);
   assert.equal(second.state.renders.at(-1).watt, true);
   assert.equal(second.state.renders.at(-1).cadence, false);
 });
 
-test('invalid storage and deselecting all metrics cannot make the overlay empty', () => {
-  const storage = new Map([['qzcompanion.horizontal.metrics.v1', '{invalid json']]);
+test('prior beta WebView storage remains readable if Android selection has not been set', () => {
+  const storage = new Map([
+    ['qzcompanion.horizontal.metrics.v1', JSON.stringify(['heart', 'watt'])]
+  ]);
+  const {state} = makeFixture(storage);
+  assert.equal(state.renders.at(-1).heart, true);
+  assert.equal(state.renders.at(-1).cadence, false);
+});
+
+test('invalid stored data and deselect-all do not leave the bar empty', () => {
+  const storage = new Map([['qzcompanion.horizontal.metrics.v1', '{bad json']]);
   const {context, state} = makeFixture(storage);
   state.activeMetrics = [];
   context.saveMetricPreferences();
@@ -141,23 +185,23 @@ test('invalid storage and deselecting all metrics cannot make the overlay empty'
   assert.equal(state.qzSettingsWrites, 0);
 });
 
-test('close hides Companion locally rather than sending floating_close to QZ', () => {
+test('close action closes Companion locally and not the QZ floating page', () => {
   const {context, state} = makeFixture();
   context.Close();
   assert.equal(state.localCloseCalls, 1);
   assert.equal(state.qzCloseCalls, 0);
 });
 
-test('close can fall back to QZ on a host without the Android bridge', () => {
-  const {context, state} = makeFixture(new Map(), false);
+test('without Android bridge, close retains the QZ HTML fallback', () => {
+  const {context, state} = makeFixture(new Map(), {bridge: false});
   context.Close();
   assert.equal(state.qzCloseCalls, 1);
 });
 
-test('reinjecting the same script does not install duplicate wrappers or CSS', () => {
+test('reinjection is idempotent and installs only one CSS patch', () => {
   const {context, state, bar} = makeFixture();
   vm.runInNewContext(patch, context, {filename: 'companion_horizontal.js'});
   context.updateHorizontalMetrics();
   assert.equal(state.styles.length, 1);
-  assert.equal(bar.children.length, 1);
+  assert.equal(bar.children.length, 0);
 });
