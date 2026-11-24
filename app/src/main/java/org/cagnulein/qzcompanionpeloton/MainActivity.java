@@ -32,6 +32,8 @@ import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.app.Activity;
+import androidx.appcompat.app.AlertDialog;
+import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.sql.Timestamp;
@@ -107,6 +109,32 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         } finally {
             loadingGeometryFields = false;
         }
+    }
+
+    private void showHorizontalMetricSelector() {
+        String saved = sharedPreferences.getString(CompanionMetrics.PREFERENCE,
+                CompanionMetrics.DEFAULT_SELECTION);
+        boolean[] selected = CompanionMetrics.checked(saved);
+        new AlertDialog.Builder(this)
+                .setTitle("Horizontal metrics (Companion only)")
+                .setMultiChoiceItems(CompanionMetrics.LABELS, selected,
+                        (dialog, index, checked) -> selected[index] = checked)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    boolean anySelected = false;
+                    for (boolean checked : selected) {
+                        if (checked) { anySelected = true; break; }
+                    }
+                    if (!anySelected) {
+                        Toast.makeText(this, "Select at least one metric", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    sharedPreferences.edit()
+                            .putString(CompanionMetrics.PREFERENCE,
+                                    CompanionMetrics.fromChecked(selected))
+                            .apply();
+                })
+                .show();
     }
 
     static Button dumplog;
@@ -407,9 +435,13 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         });
 
         Switch horizontalFloating = findViewById(R.id.horizontalfloating);
+        Button chooseHorizontalMetrics = findViewById(R.id.configurehorizontalmetrics);
         horizontalFloating.setChecked(sharedPreferences.getBoolean(FloatingWindowStyle.PREFERENCE, false));
+        chooseHorizontalMetrics.setVisibility(horizontalFloating.isChecked() ? View.VISIBLE : View.GONE);
+        chooseHorizontalMetrics.setOnClickListener(button -> showHorizontalMetricSelector());
         horizontalFloating.setOnCheckedChangeListener((button, checked) -> {
             sharedPreferences.edit().putBoolean(FloatingWindowStyle.PREFERENCE, checked).apply();
+            chooseHorizontalMetrics.setVisibility(checked ? View.VISIBLE : View.GONE);
             loadFloatingGeometry();
             if (floating_open && !QZService.address.isEmpty()) {
                 FloatingHandler.hide();
