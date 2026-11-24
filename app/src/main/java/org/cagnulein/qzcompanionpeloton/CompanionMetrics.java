@@ -32,7 +32,13 @@ final class CompanionMetrics {
             String id = item.trim();
             if (Arrays.asList(IDS).contains(id)) filtered.add(id);
         }
-        return filtered.isEmpty() ? DEFAULT_SELECTION : String.join(",", filtered);
+        if (filtered.isEmpty()) return DEFAULT_SELECTION;
+        StringBuilder result = new StringBuilder();
+        for (String id : filtered) {
+            if (result.length() > 0) result.append(',');
+            result.append(id);
+        }
+        return result.toString();
     }
 
     static boolean[] checked(String csv) {
