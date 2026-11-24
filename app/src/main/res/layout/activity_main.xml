@@ -240,6 +240,15 @@
                     android:contentDescription="Use a horizontal QZ metrics bar instead of the vertical floating window" />
             </LinearLayout>
 
+            <Button
+                android:id="@+id/configurehorizontalmetrics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Choose horizontal metrics"
+                android:contentDescription="Choose which metrics appear in the QZ Companion horizontal floating bar"
+                android:visibility="gone"
+                android:focusable="true" />
+
         </LinearLayout>
 
         <ScrollView
