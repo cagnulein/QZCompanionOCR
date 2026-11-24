@@ -15,18 +15,22 @@ Horizontal floating metrics (beta):
 - Width, height, left and top are stored separately for vertical and horizontal layouts.
   The horizontal layout initially fills the screen width and appears as a short bar at the bottom.
 - If a QZ version returns HTTP 404 for the horizontal page, Companion falls back to the vertical page.
-- Companion injects its own app/src/main/assets/companion_horizontal.js after the QZ horizontal page loads.
-  This restores quick-action buttons after QZ rebuilds the metrics and makes them visible on Android TV.
+- Companion injects app/src/main/assets/companion_horizontal.js after the QZ horizontal page loads.
+  The horizontal overlay is read-only: quick-action buttons, the metric selector and control
+  panels are intentionally hidden so they do not cover Peloton workouts.
 - The initial bar shows Power, Cadence, Heart Rate, Resistance and Peloton Resistance.
-  The metric selector stores changes in Companion WebView localStorage, without writing QZ tile_* settings.
-- The minimal Android bridge expands/restores the Companion window for selectors and controls.
-  The Close action hides the Companion overlay without sending a floating_close command to QZ;
-  UDP auto-show remains suppressed until the user opens it again or QZ reconnects.
-- Android TV remote D-pad navigation of the non-focusable overlay is not supported.
-  Use Companion's width/height/position settings and a pointer to interact with the bar.
-- Node regression tests can be run with `node --test tools/test-companion-horizontal.cjs`.
-  They cover QZ re-rendering, local preferences, Close and re-injection. They do not replace
-  a real Nvidia Shield + Peloton test.
+  To customize the bar on Android TV, enable "Horizontal floating metrics (QZ)" in Companion,
+  then choose "Choose horizontal metrics". Use the Nvidia Shield remote to select metrics
+  in the native Android dialog and Save. These preferences are stored by Companion, never
+  written to QZ tile_* settings; they update the currently running overlay.
+- An existing Companion WebView-local selection is retained until a native selection is saved.
+  The page can still safely store preferences without changing QZ when used with a pointer.
+- A minimal Android bridge supports local overlay close and the existing panel APIs without
+  changing QZ or its WebSocket feed. The window remains non-focusable so Peloton receives
+  the remote's playback and navigation keys.
+- Node regression tests: `node --test tools/test-companion-horizontal.cjs`.
+  Java unit tests also cover invalid/duplicate metric IDs and round-trip remote selections.
+  Real Nvidia Shield + Peloton behavior still needs confirmation.
 
 Google Play 16 KB release verification:
 - The Android GitHub Actions workflow builds a new release AAB, checks its bundle
