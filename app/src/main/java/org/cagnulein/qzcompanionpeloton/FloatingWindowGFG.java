@@ -53,6 +53,11 @@ public class FloatingWindowGFG extends Service {
 
     private final SharedPreferences.OnSharedPreferenceChangeListener prefListener =
         (prefs, key) -> {
+            if (CompanionTextScale.AUTO_PREFERENCE.equals(key) ||
+                    CompanionTextScale.PERCENT_PREFERENCE.equals(key)) {
+                updateHorizontalTextScale();
+                return;
+            }
             if (CompanionMetrics.PREFERENCE.equals(key)) {
                 if (horizontalMode && horizontalWebView != null) {
                     String selected = CompanionMetrics.normalize(
@@ -100,6 +105,9 @@ public class FloatingWindowGFG extends Service {
                     collapsedWindowY = floatWindowLayoutParam.y;
                 }
                 windowManager.updateViewLayout(floatView, floatWindowLayoutParam);
+                if (widthKey.equals(key) || heightKey.equals(key)) {
+                    updateHorizontalTextScale();
+                }
             }
         };
 
@@ -333,10 +341,33 @@ public class FloatingWindowGFG extends Service {
             while ((size = input.read(buffer)) != -1) {
                 output.write(buffer, 0, size);
             }
-            view.evaluateJavascript(output.toString("UTF-8"), null);
+            // Initialize scaling only after the injection has installed its JS handler.
+            view.evaluateJavascript(output.toString("UTF-8"),
+                    ignored -> updateHorizontalTextScale());
         } catch (IOException error) {
             Log.e("QZ", "Failed to inject Companion horizontal overlay patch", error);
         }
+    }
+
+    private void updateHorizontalTextScale() {
+        mainHandler.post(() -> {
+            if (!horizontalMode || horizontalWebView == null ||
+                    floatWindowLayoutParam == null || sharedPreferences == null) return;
+            android.graphics.Point screen = new android.graphics.Point();
+            windowManager.getDefaultDisplay().getSize(screen);
+            int referenceHeight = Math.max(1,
+                    (int) (FloatingWindowStyle.DEFAULT_BAR_HEIGHT_DP *
+                            getResources().getDisplayMetrics().density + 0.5f));
+            float scale = CompanionTextScale.calculate(
+                    floatWindowLayoutParam.width, floatWindowLayoutParam.height,
+                    screen.x, referenceHeight,
+                    sharedPreferences.getBoolean(CompanionTextScale.AUTO_PREFERENCE, true),
+                    sharedPreferences.getInt(CompanionTextScale.PERCENT_PREFERENCE,
+                            CompanionTextScale.DEFAULT_PERCENT));
+            horizontalWebView.evaluateJavascript(
+                    "if(window.setCompanionTextScale)window.setCompanionTextScale(" +
+                    Float.toString(scale) + ");", null);
+        });
     }
 
     private void expandHorizontalWindow(int extraCssPixels) {
