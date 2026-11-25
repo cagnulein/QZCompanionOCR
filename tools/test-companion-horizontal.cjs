@@ -210,32 +210,34 @@ test('reinjection is idempotent and installs only one CSS patch', () => {
   assert.equal(bar.children.length, 0);
 });
 
-test('window and font dimensions share one proportional CSS variable', () => {
+test('25% smaller window produces 25% smaller text and bar without clipping bounds', () => {
   const {context, state} = makeFixture();
   const css = state.styles[0].textContent;
-  for (const selector of ['.metric-name', '.metric-value', '.metric-avg', '.horizontal-bar .metric']) {
-    assert.ok(css.includes(selector), selector);
+  for (const variable of ['--companion-h-height', '--companion-h-min-width',
+      '--companion-h-padding', '--companion-h-name', '--companion-h-value', '--companion-h-avg']) {
+    assert.ok(css.includes('var(' + variable), variable);
   }
-  assert.match(css, /height:calc\(70px \* var\(--companion-h-scale, 1\)\)/);
-  assert.match(css, /font-size:calc\(24px \* var\(--companion-h-scale, 1\)\)/);
   context.setCompanionTextScale(0.75);
-  assert.equal(state.cssVars['--companion-h-scale'], '0.75');
-  // Label and value shrink along with the 70px bar; no transform that leaves
-  // its original layout bounds behind to clip text at a reduced window height.
+  assert.equal(state.cssVars['--companion-h-height'], '52.5px');
+  assert.equal(state.cssVars['--companion-h-name'], '9px');
+  assert.equal(state.cssVars['--companion-h-value'], '18px');
+  assert.equal(state.cssVars['--companion-h-avg'], '7.5px');
+  assert.equal(state.cssVars['--companion-h-min-width'], '60px');
+  assert.equal(state.cssVars['--companion-h-padding'], '3.75px');
   assert.doesNotMatch(css, /transform:scale/);
 });
 
-test('font scale live updates, bounds invalid input, and never writes to QZ', () => {
+test('font scale live updates and rejects invalid input without changing QZ', () => {
   const {context, state} = makeFixture();
   context.setCompanionTextScale(1);
-  assert.equal(state.cssVars['--companion-h-scale'], '1');
+  assert.equal(state.cssVars['--companion-h-value'], '24px');
   context.setCompanionTextScale(0.5);
-  assert.equal(state.cssVars['--companion-h-scale'], '0.5');
+  assert.equal(state.cssVars['--companion-h-value'], '12px');
   context.setCompanionTextScale(99);
-  assert.equal(state.cssVars['--companion-h-scale'], '2');
+  assert.equal(state.cssVars['--companion-h-value'], '48px');
   context.setCompanionTextScale(0.001);
-  assert.equal(state.cssVars['--companion-h-scale'], '0.3');
+  assert.equal(state.cssVars['--companion-h-value'], (24 * 0.3) + 'px');
   context.setCompanionTextScale(NaN);
-  assert.equal(state.cssVars['--companion-h-scale'], '0.3');
+  assert.equal(state.cssVars['--companion-h-value'], (24 * 0.3) + 'px');
   assert.equal(state.qzSettingsWrites, 0);
 });
