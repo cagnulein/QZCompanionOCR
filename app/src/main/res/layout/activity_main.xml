@@ -249,6 +249,37 @@
                 android:visibility="gone"
                 android:focusable="true" />
 
+            <LinearLayout
+                android:id="@+id/horizontaltextsettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <Switch
+                    android:id="@+id/horizontaltextautoscale"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Scale horizontal text with window size"
+                    android:contentDescription="Automatically scale horizontal metric text when changing the overlay width or height"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/horizontaltextsizevalue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Horizontal text size: 100%" />
+
+                <SeekBar
+                    android:id="@+id/horizontaltextsize"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="20"
+                    android:progress="10"
+                    android:focusable="true"
+                    android:contentDescription="Additional horizontal text size adjustment, 50 to 150 percent" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <ScrollView
