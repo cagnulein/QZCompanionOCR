@@ -100,13 +100,15 @@ public class UDPListenerService extends Service {
         if(message.contains("http")) {
             lastURLReceivedTS = Instant.now();
             Boolean refreshURL = false;
-            if(!QZService.address.isEmpty() && !QZService.address.equals(message))
+            if(!QZService.address.isEmpty() && !QZService.address.equals(message)) {
                 refreshURL = true;
+                MainActivity.horizontalOverlayDismissed = false;
+            }
             QZService.address = message;
             if(!MainActivity.floating_open) {
                 SharedPreferences sharedPreferences = getSharedPreferences("QZ",MODE_PRIVATE);
                 boolean b_autofloating = sharedPreferences.getBoolean("autofloating", true);
-                if(b_autofloating) {
+                if(b_autofloating && !MainActivity.horizontalOverlayDismissed) {
                     MainActivity.showFloating();
                 }
             } else if(refreshURL) {
@@ -117,6 +119,7 @@ public class UDPListenerService extends Service {
 
         if(!QZService.address.isEmpty() && Duration.between(lastURLReceivedTS, Instant.now()).abs().getSeconds() > 5) {
             QZService.address = "";
+            MainActivity.horizontalOverlayDismissed = false;
             MainActivity.floating_open = false;
             FloatingHandler.hide();
         }

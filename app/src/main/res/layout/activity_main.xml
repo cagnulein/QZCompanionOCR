@@ -226,6 +226,60 @@
                     android:text="Auto Show Floating" />
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Switch
+                    android:id="@+id/horizontalfloating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Horizontal floating metrics (QZ)"
+                    android:contentDescription="Use a horizontal QZ metrics bar instead of the vertical floating window" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/configurehorizontalmetrics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Choose horizontal metrics"
+                android:contentDescription="Choose which metrics appear in the QZ Companion horizontal floating bar"
+                android:visibility="gone"
+                android:focusable="true" />
+
+            <LinearLayout
+                android:id="@+id/horizontaltextsettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <Switch
+                    android:id="@+id/horizontaltextautoscale"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Scale horizontal text with window size"
+                    android:contentDescription="Automatically scale horizontal metric text when changing the overlay width or height"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/horizontaltextsizevalue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Horizontal text size: 100%" />
+
+                <SeekBar
+                    android:id="@+id/horizontaltextsize"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="20"
+                    android:progress="10"
+                    android:focusable="true"
+                    android:contentDescription="Additional horizontal text size adjustment, 50 to 150 percent" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <ScrollView
