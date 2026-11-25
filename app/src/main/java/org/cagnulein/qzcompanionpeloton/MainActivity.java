@@ -30,6 +30,7 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.app.Activity;
 import androidx.appcompat.app.AlertDialog;
@@ -436,12 +437,39 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
 
         Switch horizontalFloating = findViewById(R.id.horizontalfloating);
         Button chooseHorizontalMetrics = findViewById(R.id.configurehorizontalmetrics);
+        View horizontalTextSettings = findViewById(R.id.horizontaltextsettings);
+        Switch autoScaleText = findViewById(R.id.horizontaltextautoscale);
+        SeekBar horizontalTextSize = findViewById(R.id.horizontaltextsize);
+        TextView horizontalTextSizeLabel = findViewById(R.id.horizontaltextsizevalue);
+        autoScaleText.setChecked(sharedPreferences.getBoolean(
+                CompanionTextScale.AUTO_PREFERENCE, true));
+        autoScaleText.setOnCheckedChangeListener((button, checked) ->
+                sharedPreferences.edit().putBoolean(
+                        CompanionTextScale.AUTO_PREFERENCE, checked).apply());
+        int textPercent = CompanionTextScale.clampPercent(
+                sharedPreferences.getInt(CompanionTextScale.PERCENT_PREFERENCE,
+                        CompanionTextScale.DEFAULT_PERCENT));
+        horizontalTextSize.setProgress(CompanionTextScale.progressForPercent(textPercent));
+        horizontalTextSizeLabel.setText("Horizontal text size: " + textPercent + "%");
+        horizontalTextSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onStartTrackingTouch(SeekBar bar) {}
+            @Override public void onStopTrackingTouch(SeekBar bar) {}
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                if (!fromUser) return;
+                int percent = CompanionTextScale.percentForProgress(progress);
+                horizontalTextSizeLabel.setText("Horizontal text size: " + percent + "%");
+                sharedPreferences.edit().putInt(
+                        CompanionTextScale.PERCENT_PREFERENCE, percent).apply();
+            }
+        });
         horizontalFloating.setChecked(sharedPreferences.getBoolean(FloatingWindowStyle.PREFERENCE, false));
         chooseHorizontalMetrics.setVisibility(horizontalFloating.isChecked() ? View.VISIBLE : View.GONE);
+        horizontalTextSettings.setVisibility(horizontalFloating.isChecked() ? View.VISIBLE : View.GONE);
         chooseHorizontalMetrics.setOnClickListener(button -> showHorizontalMetricSelector());
         horizontalFloating.setOnCheckedChangeListener((button, checked) -> {
             sharedPreferences.edit().putBoolean(FloatingWindowStyle.PREFERENCE, checked).apply();
             chooseHorizontalMetrics.setVisibility(checked ? View.VISIBLE : View.GONE);
+            horizontalTextSettings.setVisibility(checked ? View.VISIBLE : View.GONE);
             loadFloatingGeometry();
             if (floating_open && !QZService.address.isEmpty()) {
                 FloatingHandler.hide();
