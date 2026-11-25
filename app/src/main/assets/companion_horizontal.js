@@ -125,16 +125,42 @@
     }
   };
 
+  // CSS pixels correspond to Android dp in the WebView. Native Companion
+  // calculates the geometry ratio in physical pixels and sends a unitless scale.
+  // Never use transform:scale(): it would leave the original layout's text bounds
+  // in place and the reduced overlay would still clip the metrics.
+  window.setCompanionTextScale = function (value) {
+    var scale = Number(value);
+    if (!isFinite(scale) || scale <= 0) return;
+    scale = Math.max(0.30, Math.min(2.0, scale));
+    document.documentElement.style.setProperty("--companion-h-scale", String(scale));
+  };
+
   var style = document.createElement("style");
   style.id = "qz-companion-horizontal-style";
   style.textContent =
-    ".horizontal-bar {box-sizing:border-box;padding-right:0;}" +
+    ".horizontal-bar {" +
+    "box-sizing:border-box;padding-right:0;" +
+    "height:calc(70px * var(--companion-h-scale, 1)) !important;" +
+    "}" +
     // Never display overlay controls on top of Peloton during a workout.
     ".horizontal-bar .quick-actions, .horizontal-bar button, " +
     "#controls-panel, #metric-selector, #complete-panel " +
     "{display:none !important;}" +
-    ".horizontal-bar .metric {min-width:90px;}" +
-    ".horizontal-bar .metric-value {font-size:24px;}";
+    ".horizontal-bar .metric {" +
+    "min-width:calc(80px * var(--companion-h-scale, 1)) !important;" +
+    "padding:calc(5px * var(--companion-h-scale, 1)) !important;" +
+    "}" +
+    ".horizontal-bar .metric-name {" +
+    "font-size:calc(12px * var(--companion-h-scale, 1)) !important;" +
+    "margin-bottom:calc(2px * var(--companion-h-scale, 1)) !important;" +
+    "}" +
+    ".horizontal-bar .metric-value {" +
+    "font-size:calc(24px * var(--companion-h-scale, 1)) !important;" +
+    "}" +
+    ".horizontal-bar .metric-avg {" +
+    "font-size:calc(10px * var(--companion-h-scale, 1)) !important;" +
+    "}";
   document.head.appendChild(style);
 
   // Initial render is safe even if QZ already ran initializeTemplate().
