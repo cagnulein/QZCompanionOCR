@@ -133,7 +133,16 @@
     var scale = Number(value);
     if (!isFinite(scale) || scale <= 0) return;
     scale = Math.max(0.30, Math.min(2.0, scale));
-    document.documentElement.style.setProperty("--companion-h-scale", String(scale));
+    var rootStyle = document.documentElement.style;
+    // Explicit pixel values are compatible with older Android TV WebViews
+    // that do not support CSS calc() multiplication.
+    rootStyle.setProperty("--companion-h-height", (70 * scale) + "px");
+    rootStyle.setProperty("--companion-h-min-width", (80 * scale) + "px");
+    rootStyle.setProperty("--companion-h-padding", (5 * scale) + "px");
+    rootStyle.setProperty("--companion-h-name", (12 * scale) + "px");
+    rootStyle.setProperty("--companion-h-gap", (2 * scale) + "px");
+    rootStyle.setProperty("--companion-h-value", (24 * scale) + "px");
+    rootStyle.setProperty("--companion-h-avg", (10 * scale) + "px");
   };
 
   var style = document.createElement("style");
@@ -141,25 +150,25 @@
   style.textContent =
     ".horizontal-bar {" +
     "box-sizing:border-box;padding-right:0;" +
-    "height:calc(70px * var(--companion-h-scale, 1)) !important;" +
+    "height:var(--companion-h-height, 70px) !important;" +
     "}" +
     // Never display overlay controls on top of Peloton during a workout.
     ".horizontal-bar .quick-actions, .horizontal-bar button, " +
     "#controls-panel, #metric-selector, #complete-panel " +
     "{display:none !important;}" +
     ".horizontal-bar .metric {" +
-    "min-width:calc(80px * var(--companion-h-scale, 1)) !important;" +
-    "padding:calc(5px * var(--companion-h-scale, 1)) !important;" +
+    "min-width:var(--companion-h-min-width, 80px) !important;" +
+    "padding:var(--companion-h-padding, 5px) !important;" +
     "}" +
     ".horizontal-bar .metric-name {" +
-    "font-size:calc(12px * var(--companion-h-scale, 1)) !important;" +
-    "margin-bottom:calc(2px * var(--companion-h-scale, 1)) !important;" +
+    "font-size:var(--companion-h-name, 12px) !important;" +
+    "margin-bottom:var(--companion-h-gap, 2px) !important;" +
     "}" +
     ".horizontal-bar .metric-value {" +
-    "font-size:calc(24px * var(--companion-h-scale, 1)) !important;" +
+    "font-size:var(--companion-h-value, 24px) !important;" +
     "}" +
     ".horizontal-bar .metric-avg {" +
-    "font-size:calc(10px * var(--companion-h-scale, 1)) !important;" +
+    "font-size:var(--companion-h-avg, 10px) !important;" +
     "}";
   document.head.appendChild(style);
 
