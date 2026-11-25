@@ -26,6 +26,7 @@ function makeFixture(sharedStorage = new Map(), opts = {}) {
     styles: [],
     activeMetrics: [],
     clickHandler: null,
+    cssVars: {},
     selectors: { 'metric-selector': { style: { display: 'block' } } }
   };
   let markup = '';
@@ -56,6 +57,9 @@ function makeFixture(sharedStorage = new Map(), opts = {}) {
     localStorage,
     console: { warn() {} },
     document: {
+      documentElement: {
+        style: { setProperty(name, value) { state.cssVars[name] = value; } }
+      },
       getElementById(id) { return state.selectors[id] || null; },
       createElement(tag) { return {tagName: tag, className: '', innerHTML: '', textContent: ''}; },
       querySelectorAll(selector) {
@@ -204,4 +208,34 @@ test('reinjection is idempotent and installs only one CSS patch', () => {
   context.updateHorizontalMetrics();
   assert.equal(state.styles.length, 1);
   assert.equal(bar.children.length, 0);
+});
+
+test('window and font dimensions share one proportional CSS variable', () => {
+  const {context, state} = makeFixture();
+  const css = state.styles[0].textContent;
+  for (const selector of ['.metric-name', '.metric-value', '.metric-avg', '.horizontal-bar .metric']) {
+    assert.ok(css.includes(selector), selector);
+  }
+  assert.match(css, /height:calc\(70px \* var\(--companion-h-scale, 1\)\)/);
+  assert.match(css, /font-size:calc\(24px \* var\(--companion-h-scale, 1\)\)/);
+  context.setCompanionTextScale(0.75);
+  assert.equal(state.cssVars['--companion-h-scale'], '0.75');
+  // Label and value shrink along with the 70px bar; no transform that leaves
+  // its original layout bounds behind to clip text at a reduced window height.
+  assert.doesNotMatch(css, /transform:scale/);
+});
+
+test('font scale live updates, bounds invalid input, and never writes to QZ', () => {
+  const {context, state} = makeFixture();
+  context.setCompanionTextScale(1);
+  assert.equal(state.cssVars['--companion-h-scale'], '1');
+  context.setCompanionTextScale(0.5);
+  assert.equal(state.cssVars['--companion-h-scale'], '0.5');
+  context.setCompanionTextScale(99);
+  assert.equal(state.cssVars['--companion-h-scale'], '2');
+  context.setCompanionTextScale(0.001);
+  assert.equal(state.cssVars['--companion-h-scale'], '0.3');
+  context.setCompanionTextScale(NaN);
+  assert.equal(state.cssVars['--companion-h-scale'], '0.3');
+  assert.equal(state.qzSettingsWrites, 0);
 });
