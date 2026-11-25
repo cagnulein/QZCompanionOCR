@@ -25,6 +25,12 @@ Horizontal floating metrics (beta):
   written to QZ tile_* settings; they update the currently running overlay.
 - An existing Companion WebView-local selection is retained until a native selection is saved.
   The page can still safely store preferences without changing QZ when used with a pointer.
+- Horizontal text scales with overlay dimensions by default: 25% less height
+  (or width) results in 25% smaller metric labels, values, and layout dimensions.
+  In Companion's main settings, use "Scale horizontal text with window size"
+  to enable/disable automatic scaling and adjust "Horizontal text size" from
+  50% to 150% with the Nvidia Shield remote. Changes apply to an open overlay;
+  the vertical layout and QZ tile settings remain unchanged.
 - A minimal Android bridge supports local overlay close and the existing panel APIs without
   changing QZ or its WebSocket feed. The window remains non-focusable so Peloton receives
   the remote's playback and navigation keys.
